@@ -1,0 +1,150 @@
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+build
+develop-eggs
+dist
+downloads
+eggs
+.eggs
+lib
+lib64
+parts
+sdist
+var
+wheels
+*.egg-info
+.installed.cfg
+*.egg
+PIPFILE.lock
+
+# Virtual environments
+venv
+env
+.venv
+.env.local
+.env.*.local
+
+# IDEs and editors
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis
+
+# Documentation
+docs/_build
+*.md
+!README.md
+
+# Node.js (if using)
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+logs
+*.log
+
+# Database
+*.sqlite3
+*.db
+
+# Media and static files (development)
+media/
+static/
+staticfiles/
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# Security
+*.key
+*.pem
+*.crt
+*.csr
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Local development
+.local
+local_settings.py
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Environments
+.env.backup
+.env.example
+
+# Package managers
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Build tools
+webpack-stats.json
+
+# Monitoring and profiling
+.prof

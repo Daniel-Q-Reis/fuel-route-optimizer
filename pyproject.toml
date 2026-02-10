@@ -1,0 +1,60 @@
+[tool.ruff]
+line-length = 88
+indent-width = 4
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+ignore = ["E501"]
+per-file-ignores = { "src/fuel-route-optimizer/settings/*.py" = ["F403", "I001"] }
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "fuel-route-optimizer.settings.development"
+python_files = "tests.py test_*.py *_tests.py"
+pythonpath = ["."]
+addopts = "--tb=short --cov --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "src/manage.py",
+    "src/config/settings/*",
+    "src/config/wsgi.py",
+    "src/config/asgi.py",
+    "src/fuel-route-optimizer/celery.py",
+    "src/conftest.py",
+    "*/__init__.py",
+    "*/apps.py",
+]
+
+[tool.bandit]
+skips = ["B101", "B106", "B311"]
+[tool.bandit.sideload]

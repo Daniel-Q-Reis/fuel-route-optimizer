@@ -1,0 +1,60 @@
+{
+  "name": "Django Production Template",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "../docker-compose.override.yml"
+  ],
+  "service": "web",
+  "workspaceFolder": "/usr/src/app",
+  "shutdownAction": "stopCompose",
+  "features": {},
+  "forwardPorts": [
+    8000,
+    5678
+  ],
+  "overrideCommand": "sleep infinity",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "containerEnv": {
+    "GIT_AUTHOR_NAME": "${localEnv:GIT_AUTHOR_NAME}",
+    "GIT_AUTHOR_EMAIL": "${localEnv:GIT_AUTHOR_EMAIL}",
+    "GIT_COMMITTER_NAME": "${localEnv:GIT_AUTHOR_NAME}",
+    "GIT_COMMITTER_EMAIL": "${localEnv:GIT_AUTHOR_EMAIL}"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        },
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.pylintEnabled": false,
+        "python.linting.enabled": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit"
+          }
+        },
+        "python.testing.pytestArgs": [
+          "src"
+        ],
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "batisteo.vscode-django",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "ms-python.debugpy"
+      ]
+    }
+  },
+  "remoteUser": "appuser"
+}
