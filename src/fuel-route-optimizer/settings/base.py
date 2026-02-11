@@ -64,6 +64,7 @@ THIRD_PARTY_APPS = [
     "django_filters",
     "corsheaders",
     "storages",
+    "silk",  # Performance profiling (dev only)
 ]
 
 if "yes" == "yes":
@@ -77,6 +78,7 @@ LOCAL_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    "silk.middleware.SilkyMiddleware",  # Performance profiling (must be first)
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",

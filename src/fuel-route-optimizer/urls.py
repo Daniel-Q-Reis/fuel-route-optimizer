@@ -40,5 +40,7 @@ urlpatterns = [
     # path("api/v1/", include("src.apps.your_app.urls")),
     # Fuel route optimization API
     path("", include("fuel_stations.urls")),
+    # Performance profiling (dev only)
+    path("silk/", include("silk.urls", namespace="silk")),
     # Add your apps' urls here
 ]
