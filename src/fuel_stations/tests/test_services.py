@@ -152,7 +152,9 @@ class RouteOptimizationServiceTest(TestCase):
         self.assertIsInstance(best_station, FuelStation)
 
     @patch("fuel_stations.services.route_optimizer.ORSClient")
-    def test_find_best_station_no_viable_station(self, mock_ors_client: MagicMock) -> None:
+    def test_find_best_station_no_viable_station(
+        self, mock_ors_client: MagicMock
+    ) -> None:
         """Test that None is returned when no station can reach destination."""
         service = RouteOptimizationService()
 
@@ -167,7 +169,9 @@ class RouteOptimizationServiceTest(TestCase):
         self.assertIsNone(best_station)
 
     @patch("fuel_stations.services.route_optimizer.ORSClient")
-    def test_find_best_station_greedy_selection(self, mock_ors_client: MagicMock) -> None:
+    def test_find_best_station_greedy_selection(
+        self, mock_ors_client: MagicMock
+    ) -> None:
         """Test that cheapest viable station is selected (greedy)."""
         service = RouteOptimizationService()
 
@@ -192,7 +196,9 @@ class RouteOptimizationServiceTest(TestCase):
         self.assertAlmostEqual(float(avg_price), float(expected_avg), places=2)
 
     @patch("fuel_stations.services.route_optimizer.ORSClient")
-    def test_get_average_fuel_price_no_stations(self, mock_ors_client: MagicMock) -> None:
+    def test_get_average_fuel_price_no_stations(
+        self, mock_ors_client: MagicMock
+    ) -> None:
         """Test fallback price when no stations exist."""
         FuelStation.objects.all().delete()
 
