@@ -135,7 +135,8 @@ class RouteOptimizationServiceTest(TestCase):
         with self.assertRaises(RouteNotFoundError):
             service.optimize_route(0, 0, 0, 0)
 
-    def test_find_best_station_within_range(self) -> None:
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_find_best_station_within_range(self, mock_ors_client: MagicMock) -> None:
         """Test finding best station within specified range."""
         service = RouteOptimizationService()
 
@@ -150,7 +151,8 @@ class RouteOptimizationServiceTest(TestCase):
         self.assertIsNotNone(best_station)
         self.assertIsInstance(best_station, FuelStation)
 
-    def test_find_best_station_no_viable_station(self) -> None:
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_find_best_station_no_viable_station(self, mock_ors_client: MagicMock) -> None:
         """Test that None is returned when no station can reach destination."""
         service = RouteOptimizationService()
 
@@ -164,7 +166,8 @@ class RouteOptimizationServiceTest(TestCase):
 
         self.assertIsNone(best_station)
 
-    def test_find_best_station_greedy_selection(self) -> None:
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_find_best_station_greedy_selection(self, mock_ors_client: MagicMock) -> None:
         """Test that cheapest viable station is selected (greedy)."""
         service = RouteOptimizationService()
 
@@ -179,7 +182,8 @@ class RouteOptimizationServiceTest(TestCase):
         self.assertIsNotNone(best_station)
         self.assertEqual(best_station.retail_price, Decimal("3.45"))
 
-    def test_get_average_fuel_price(self) -> None:
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_get_average_fuel_price(self, mock_ors_client: MagicMock) -> None:
         """Test average fuel price calculation."""
         service = RouteOptimizationService()
         avg_price = service._get_average_fuel_price()
@@ -187,7 +191,8 @@ class RouteOptimizationServiceTest(TestCase):
         expected_avg = (Decimal("3.45") + Decimal("3.75") + Decimal("4.25")) / 3
         self.assertAlmostEqual(float(avg_price), float(expected_avg), places=2)
 
-    def test_get_average_fuel_price_no_stations(self) -> None:
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_get_average_fuel_price_no_stations(self, mock_ors_client: MagicMock) -> None:
         """Test fallback price when no stations exist."""
         FuelStation.objects.all().delete()
 
