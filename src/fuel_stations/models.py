@@ -20,15 +20,15 @@ class FuelStation(models.Model):
     address: models.TextField = models.TextField()  # type: ignore[type-arg]
     city: models.CharField = models.CharField(max_length=100)  # type: ignore[type-arg]
     state: models.CharField = models.CharField(max_length=2, db_index=True)  # type: ignore[type-arg]
-    retail_price: models.DecimalField = models.DecimalField(
+    retail_price: models.DecimalField = models.DecimalField(  # type: ignore[type-arg]
         max_digits=5, decimal_places=2, db_index=True
-    )  # type: ignore[type-arg]
-    latitude: models.DecimalField = models.DecimalField(
+    )
+    latitude: models.DecimalField = models.DecimalField(  # type: ignore[type-arg]
         max_digits=9, decimal_places=6, db_index=True
-    )  # type: ignore[type-arg]
-    longitude: models.DecimalField = models.DecimalField(
+    )
+    longitude: models.DecimalField = models.DecimalField(  # type: ignore[type-arg]
         max_digits=9, decimal_places=6, db_index=True
-    )  # type: ignore[type-arg]
+    )
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)  # type: ignore[type-arg]
 
     class Meta:

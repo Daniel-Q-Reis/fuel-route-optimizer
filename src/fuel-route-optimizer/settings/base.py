@@ -39,6 +39,13 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="*")
 # Version for health checks and API docs
 VERSION = "0.1.0"
 
+# Vehicle Configuration (ADR 0003)
+# ------------------------------------------------------------------------------
+MAX_VEHICLE_RANGE_MILES = config("MAX_VEHICLE_RANGE_MILES", default=500, cast=int)
+SAFETY_MARGIN_PERCENTAGE = config("SAFETY_MARGIN_PERCENTAGE", default=0.0, cast=float)
+EFFECTIVE_RANGE_MILES = MAX_VEHICLE_RANGE_MILES * (1 - SAFETY_MARGIN_PERCENTAGE)
+MPG = 10  # Miles per gallon (fuel consumption rate)
+
 # Application definition
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
