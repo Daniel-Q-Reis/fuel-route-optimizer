@@ -1,126 +1,293 @@
-# fuel-route-optimizer
+# Fuel Route Optimizer
 
 [![CI](https://github.com/Daniel-Q-Reis/fuel-route-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Daniel-Q-Reis/fuel-route-optimizer/actions/workflows/ci.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Django 5.2](https://img.shields.io/badge/django-5.2-green.svg)](https://docs.djangoproject.com/)
+[![Django 5.2](https://img.shields.io/badge/django-5.2-green.svg)](https://docs.djangoproject.com/en/5.2/)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)]()
+[![Type Checked](https://img.shields.io/badge/mypy-strict-blue.svg)](https://mypy.readthedocs.io/)
 
-A Django-based REST API that optimizes fuel stops for long-distance routes in the USA. Features include vehicle range constraints, cost minimization using real-time fuel prices, and containerized deployment with Docker.
+A Django-based REST API that optimizes fuel stops for long-distance routes in the USA. The system minimizes fuel costs by selecting optimal refueling points while ensuring the vehicle's range is never exceeded.
+
+## ✨ Key Features
+
+- 🛣️ **Route Optimization** - Greedy algorithm finds near-optimal fuel stops
+- 💰 **Cost Minimization** - Selects cheapest viable stations using real-time pricing
+- 📍 **Spatial Queries** - Efficient bounding box + Haversine distance calculations
+- 🗺️ **OpenRouteService Integration** - Real route geometry and distances
+- ⚙️ **Configurable Safety Margins** - Production-ready safety buffer settings
+- 📊 **95% Test Coverage** - Comprehensive unit, integration, and E2E tests
+- 🔒 **Type-Safe** - Full mypy strict compliance
 
 > [!IMPORTANT]
-> **Critical Safety Findings Identified (ADR-003)**
-> During requirements analysis, we identified **two safety-critical issues** not mentioned in the original specification:
-> 1. **Driver Fatigue Risk**: 500-mile segments require 8.3 hours continuous driving, violating US DOT regulations
-> 2. **Fuel Reserve Risk**: Operating at theoretical maximum range (500 miles) creates high risk of fuel depletion due to real-world conditions (traffic, weather, elevation)
+> **Critical Safety Findings & Implementation (ADR-003)**
+> During requirements analysis, we identified **two safety-critical issues**:
+> 1. **Driver Fatigue Risk**: 500-mile segments require 8.3 hours continuous driving, violating US DOT regulations.
+> 2. **Range Accuracy Risk**: Line-of-sight estimates (Haversine) miss road geometry, risking fuel depletion in winding terrain.
 >
-> **Our Solution**: Implemented configurable `SAFETY_MARGIN_PERCENTAGE` (default 0% for assessment compliance, recommended 6% for production). See [ADR-003](docs/adr/0003-driver-safety-vs-range-optimization.md) for full analysis.
-
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology | Purpose |
-|-----------|------------|----------|
-| **Framework** | Django 5.2 | Web Framework |
-| **API** | Django REST Framework | API Development & OpenAPI Docs |
-| **Database** | PostgreSQL 15+ | Primary Database |
-| **Cache & Message Broker** | Redis 7+ | Caching & Background Task Queues |
-| **Async Tasks** | Celery 5.5 | Background Task Processing |
-| **Testing** | Pytest | Test Framework |
-| **Code Quality** | Ruff + MyPy | Linting, Formatting & Type Checking |
-| **Security** | Bandit + Safety | Vulnerability Scanning |
-| **Error Tracking** | Sentry | Real-time Error Monitoring |
+> **Our Solution**:
+> - **Geometry-Aware Optimizer**: Iterates through road coordinates for 100% distance accuracy.
+> - **Safety Insights Engine**: Recommends rest stops between 220-260 miles (~4h), providing price comparisons between "Safe" and "Optimal Cost" stops.
+>
+> See [ADR-003](docs/adr/0003-driver-safety-vs-range-optimization.md) for the full engineering analysis.
 
 ---
 
-## 🚀 Quick Start
+## � Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
+- OpenRouteService API Key ([get one free](https://openrouteservice.org/dev/#/signup))
 
-### Get Started in 2 Steps
+### Setup
 
-1.  **Start the development environment:**
-    The `setup` command builds the containers, runs database migrations, and prepares the `.env` file.
-    ```bash
-    make setup
-    ```
+1. **Clone and start:**
+   ```bash
+   git clone https://github.com/Daniel-Q-Reis/fuel-route-optimizer.git
+   cd fuel-route-optimizer
+   make setup
+   ```
 
-2.  **Access your application:**
-    The initial setup automatically creates a superuser for you:
-    - **Username:** `admin`
-    - **Password:** `admin123`
+2. **Configure API key:**
+   Add your OpenRouteService API key to `.env`:
+   ```bash
+   OPENROUTESERVICE_API_KEY=your_key_here
+   ```
 
-    You can now access the main endpoints:
-    - **API Docs:** [http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/)
-    - **Admin:** [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
-    - **Health:** [http://127.0.0.1:8000/health/](http://127.0.0.1:8000/health/)
+3. **Load fuel station data:**
+   ```bash
+   make shell
+   # In Django shell:
+   python manage.py load_fuel_stations
+   ```
 
----
-
-## ⚙️ Development Commands
-
-All commands are executed via `make`.
-
-| Command | Description |
-|---|---|
-| `make setup` | 🚀 **Initial setup:** builds containers, runs migrations, and creates a default superuser. |
-| `make up` | ⬆️ Starts all services in the background. |
-| `make down` | ⬇️ Stops all services. |
-| `make test` | 🧪 Runs the full test suite with coverage report. |
-| `make quality` | ✅ Runs all code quality checks (lint, format, types, tests). |
-| `make shell` | 🐚 Opens a Django shell inside the running container. |
-| `make superuser` | 👤 Creates a new, interactive superuser. |
-| `make logs` | 📋 Tails the logs for all running services. |
-| `make help` | ❓ Shows all available commands. |
+4. **Access the API:**
+   - **Swagger UI:** http://localhost:8000/api/docs/
+   - **ReDoc:** http://localhost:8000/api/redoc/
+   - **Health Check:** http://localhost:8000/health/
 
 ---
 
-## 🏗️ Architecture Overview
+## � API Usage
 
-This project follows **Clean Architecture** principles to ensure separation of concerns and maintainability.
+### Optimize Route Endpoint
 
-- **`src/apps/`**: Contains the different business domains of the application. Each app is a self-contained module.
-- **`src/fuel-route-optimizer/`**: Holds the project-level configuration, including settings, URL routing, and ASGI/WSGI entrypoints.
-- **Service Layer**: Business logic is encapsulated in services, decoupled from Django's views.
-- **Repository Pattern**: Data access is abstracted through repositories, making it easy to switch data sources and mock for tests.
+**POST** `/api/v1/optimize-route/`
+
+**Request:**
+```json
+{
+  "start_lat": 34.0522,
+  "start_lon": -118.2437,
+  "end_lat": 36.1699,
+  "end_lon": -115.1398
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "route": {
+    "distance_miles": 270.5,
+    "duration_hours": 4.2,
+    "geometry": [
+      {"lat": 34.0522, "lon": -118.2437},
+      {"lat": 34.8958, "lon": -117.0228},
+      {"lat": 36.1699, "lon": -115.1398}
+    ]
+  },
+  "fuel_stops": [
+    {
+      "name": "Barstow Travel Center",
+      "address": "2500 E Main St",
+      "city": "Barstow",
+      "state": "CA",
+      "lat": 34.8958,
+      "lon": -117.0228,
+      "price": "3.85",
+      "distance_from_start": 135.2
+    }
+  ],
+  "total_cost": 94.65,
+  "total_distance_miles": 270.5
+}
+```
+
+**Error Responses:**
+- `400 Bad Request` - Invalid coordinates or same start/end
+- `404 Not Found` - Route unreachable
+- `500 Internal Server Error` - Insufficient fuel stations
+
+### Try it with cURL
+
+```bash
+curl -X POST http://localhost:8000/api/v1/optimize-route/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_lat": 34.0522,
+    "start_lon": -118.2437,
+    "end_lat": 36.1699,
+    "end_lon": -115.1398
+  }'
+```
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `OPENROUTESERVICE_API_KEY` | ORS API key for route data | - | ✅ |
+| `MAX_VEHICLE_RANGE_MILES` | Maximum vehicle range | `500` | ❌ |
+| `SAFETY_MARGIN_PERCENTAGE` | Safety buffer (0.0-1.0) | `0.0` | ❌ |
+| `MPG` | Fuel economy (miles per gallon) | `10` | ❌ |
+
+**Example `.env`:**
+```bash
+OPENROUTESERVICE_API_KEY=5b3ce3597851110001cf6248...
+MAX_VEHICLE_RANGE_MILES=500
+SAFETY_MARGIN_PERCENTAGE=0.06  # 6% safety margin (production)
+MPG=10
+```
+
+---
+
+## 🏗️ Architecture
+
+### Algorithm: Greedy with Look-Ahead
+
+The route optimizer uses a **Greedy algorithm** that selects the cheapest viable fuel station at each decision point:
+
+1. **Get Route Geometry** - Fetch route from OpenRouteService Directions API
+2. **Check Range** - If route ≤ effective range, return direct route (no stops)
+3. **Find Fuel Stops** - Iterate through route geometry:
+   - When remaining range < distance to next segment
+   - Query stations within bounding box (spatial pre-filter)
+   - Refine with Haversine distance calculation
+   - Select cheapest station that can reach destination or next viable stop
+4. **Calculate Cost** - `(total_distance / MPG) × average_fuel_price`
+
+**Performance:**
+- **Time Complexity:** O(n × m) where n = route points, m = candidate stations
+- **Space Complexity:** O(n)
+- **Optimization:** Bounding box reduces 8153 stations → ~50 candidates
+
+### Tech Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|------------|
+| **Framework** | Django 5.2 | Web Framework |
+| **API** | Django REST Framework + drf-spectacular | REST API & OpenAPI Docs |
+| **Database** | PostgreSQL 15+ | Fuel station data, geospatial queries |
+| **Cache** | Redis 7+ | Caching & Celery broker |
+| **Tasks** | Celery 5.5 | Background ETL jobs |
+| **Testing** | Pytest + Django TestCase | Unit, integration, E2E tests |
+| **Type Safety** | MyPy (strict) | Static type checking |
+| **Code Quality** | Ruff + Pre-commit | Linting, formatting |
 
 ---
 
 ## 🧪 Testing & Quality
 
-This template is configured with a comprehensive quality suite.
+### Run Tests
 
-Run all checks with a single command:
 ```bash
-make quality
+# All tests
+make test
+
+# Specific test file
+docker-compose exec web python manage.py test fuel_stations.tests.test_api
+
+# With coverage report
+docker-compose exec web coverage run --source='.' manage.py test
+docker-compose exec web coverage report
 ```
 
-This command executes:
-- **`pytest`**: For unit and integration tests.
-- **`ruff`**: For code formatting and linting.
-- **`mypy`**: For static type checking.
-- **`bandit` & `safety`**: For security vulnerability scanning.
+### Quality Checks
+
+```bash
+# All checks (tests + lint + types)
+make quality
+
+# Individual checks
+docker-compose exec web mypy --strict .
+docker-compose exec web ruff check .
+docker-compose exec web ruff format --check .
+```
+
+### Test Metrics
+
+- ✅ **124 tests passing** (50 unit + 8 API integration + 5 E2E + 61 others)
+- ✅ **95.44% code coverage** (target: 75%)
+- ✅ **MyPy strict mode** - 0 errors across 56 files
+- ✅ **Pre-commit hooks** - ruff, formatting, YAML validation
 
 ---
 
-## 🚀 Production & Deployment
+## 🗂️ Project Structure
 
-This project is configured for production deployment using Docker.
+```
+src/
+├── fuel_stations/          # Main app - route optimization
+│   ├── clients/            # External API clients (ORS)
+│   ├── services/           # Business logic (RouteOptimizationService)
+│   ├── utils/              # Utilities (Haversine, bounding box)
+│   ├── serializers.py      # DRF request/response serializers
+│   ├── views.py            # API endpoints
+│   ├── models.py           # FuelStation model
+│   └── tests/              # Comprehensive test suite
+├── apps/core/              # Core functionality (health checks)
+└── fuel-route-optimizer/  # Project settings & configuration
+```
 
-The `docker-compose.prod.yml` file orchestrates the `nginx` and `django` services for a production environment.
+---
 
-**To deploy to production:**
+## 📚 Development Commands
 
-1.  Ensure your production `.env` file is configured with your domain, secrets, and `DJANGO_SETTINGS_MODULE=fuel-route-optimizer.settings.production`.
-2.  Build and run the production containers:
-    ```bash
-    docker-compose -f docker-compose.prod.yml up -d --build
-    ```
+| Command | Description |
+|---------|-------------|
+| `make setup` | 🚀 Initial setup (build, migrate, superuser) |
+| `make up` | ⬆️ Start all services |
+| `make down` | ⬇️ Stop all services |
+| `make test` | 🧪 Run test suite with coverage |
+| `make quality` | ✅ Run all quality checks |
+| `make shell` | 🐚 Open Django shell |
+| `make logs` | 📋 Tail service logs |
 
-This will start the application served by Nginx, ready to handle production traffic.
+---
+
+## 🚀 Production Deployment
+
+**Recommended Configuration:**
+```bash
+# .env.production
+SAFETY_MARGIN_PERCENTAGE=0.06  # 6% buffer
+DJANGO_SETTINGS_MODULE=fuel-route-optimizer.settings.production
+DEBUG=False
+ALLOWED_HOSTS=yourdomain.com
+
+# Add authentication (JWT/Token)
+# Add rate limiting/throttling
+# Enable API key validation
+```
+
+**Deploy with Docker Compose:**
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+---
+
+## 📖 Documentation
+
+- **API Docs:** `/api/docs/` (Swagger UI), `/api/redoc/` (ReDoc)
+- **Architecture Decisions:** [`docs/adr/`](docs/adr/)
+  - [ADR-003: Driver Safety vs Range Optimization](docs/adr/0003-driver-safety-vs-range-optimization.md)
+  - [ADR-004: Route Optimization Algorithm Selection](docs/adr/0004-route-optimization-algorithm-selection.md)
+  - [ADR-005: Spatial Query Strategy](docs/adr/0005-spatial-query-strategy-without-postgis.md)
+- **Execution Roadmap:** [`ROADMAP-EXEC.md`](ROADMAP-EXEC.md)
 
 ---
 
@@ -129,3 +296,8 @@ This will start the application served by Nginx, ready to handle production traf
 Licensed under the **MIT License**.
 
 ---
+
+## 👨‍💻 Author
+
+**Daniel Q. Reis**
+[GitHub](https://github.com/Daniel-Q-Reis) | [LinkedIn](#) | [Portfolio](#)

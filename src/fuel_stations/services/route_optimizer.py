@@ -41,44 +41,29 @@ class RouteOptimizationService:
     ) -> dict[str, Any]:
         """
         Find optimal fuel stops to minimize cost while respecting range constraint.
-
-        Args:
-            start_lat: Starting latitude
-            start_lon: Starting longitude
-            end_lat: Ending latitude
-            end_lon: Ending longitude
-
-        Returns:
-            Dictionary with:
-            {
-                'route': {distance_miles, duration_hours, geometry},
-                'fuel_stops': [{station_info, distance_from_start}, ...],
-                'total_cost': float,
-                'total_distance_miles': float
-            }
-
-        Raises:
-            RouteNotFoundError: If route cannot be found
-            InsufficientStationsError: If no stations available within range
+        Includes Safety Insights for driver fatigue.
         """
         # Step 1: Get route from ORS
         route = self.ors_client.get_directions(start_lat, start_lon, end_lat, end_lon)
         total_distance = route["distance_miles"]
+        geometry = route["geometry"]
 
         # Step 2: Check if we even need fuel stops
         if total_distance <= self.max_range:
-            # No stops needed, calculate cost with arbitrary avg price
             avg_price = self._get_average_fuel_price()
             return {
                 "route": route,
                 "fuel_stops": [],
+                "safety_insights": self._generate_initial_safety_insights(
+                    total_distance
+                ),
                 "total_cost": float((total_distance / self.mpg) * float(avg_price)),
                 "total_distance_miles": total_distance,
             }
 
-        # Step 3: Find fuel stops using Greedy algorithm
-        fuel_stops = self._find_fuel_stops(
-            start_lat, start_lon, end_lat, end_lon, route
+        # Step 3: Find fuel stops using Geometry-Aware Greedy algorithm
+        fuel_stops, safety_insights = self._find_fuel_stops_with_geometry(
+            start_lat, start_lon, end_lat, end_lon, geometry
         )
 
         # Step 4: Calculate total cost
@@ -92,62 +77,66 @@ class RouteOptimizationService:
         return {
             "route": route,
             "fuel_stops": fuel_stops,
+            "safety_insights": safety_insights,
             "total_cost": total_cost,
             "total_distance_miles": total_distance,
         }
 
-    def _find_fuel_stops(
+    def _find_fuel_stops_with_geometry(
         self,
         start_lat: float,
         start_lon: float,
         end_lat: float,
         end_lon: float,
-        route: dict[str, Any],
-    ) -> list[dict[str, Any]]:
+        geometry: list[dict[str, float]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """
-        Find fuel stops along route using Greedy algorithm.
+        Find fuel stops by walking the actual geometry for precise distance.
+        Also identifies Safety Insights for segments > 4 hours.
+        """
+        fuel_stops: list[dict[str, Any]] = []
+        safety_insights: list[dict[str, Any]] = []
 
-        Returns list of fuel stop dictionaries with station info.
-        """
-        fuel_stops = []
         current_lat, current_lon = start_lat, start_lon
-        remaining_range = self.max_range
-        distance_traveled = 0.0
+        current_geo_idx = 0
+        total_distance_traveled = 0.0
 
-        # Simplified: check at regular intervals along route
-        # In a more sophisticated implementation, we'd follow the exact geometry
-        while True:
-            # Calculate distance to destination
-            distance_to_end = haversine(current_lat, current_lon, end_lat, end_lon)
+        while current_geo_idx < len(geometry) - 1:
+            # How far can we still go?
+            distance_to_end = self._calculate_geometry_distance(
+                geometry, current_geo_idx
+            )
 
-            # Can we reach destination?
-            if distance_to_end <= remaining_range:
-                # Success! We can reach the end
+            if distance_to_end <= self.max_range:
                 break
 
-            # We need a fuel stop
-            # Find the best station within current range
+            # Find the best station within range
             station = self._find_best_station(
-                current_lat, current_lon, remaining_range, end_lat, end_lon
+                current_lat, current_lon, self.max_range, end_lat, end_lon
             )
 
             if not station:
                 raise InsufficientStationsError(
                     f"No fuel stations found within {self.max_range} miles of "
-                    f"({current_lat}, {current_lon}). Route may be impossible."
+                    f"({current_lat}, {current_lon})."
                 )
 
-            # Calculate how far we've traveled to get to this station
-            distance_to_station = haversine(
+            # Move to the station
+            dist_to_station = haversine(
                 current_lat,
                 current_lon,
                 float(station.latitude),
                 float(station.longitude),
             )
+            total_distance_traveled += dist_to_station
 
-            distance_traveled += distance_to_station
+            # Identify Safety Insights before adding the stop
+            insight = self._identify_safety_insight(
+                current_lat, current_lon, station, dist_to_station
+            )
+            if insight:
+                safety_insights.append(insight)
 
-            # Add station to stops
             fuel_stops.append(
                 {
                     "name": station.truckstop_name,
@@ -155,15 +144,142 @@ class RouteOptimizationService:
                     "lat": float(station.latitude),
                     "lon": float(station.longitude),
                     "price": float(station.retail_price),
-                    "distance_from_start": distance_traveled,
+                    "distance_from_start": round(total_distance_traveled, 2),
                 }
             )
 
-            # Update position and range
-            current_lat, current_lon = float(station.latitude), float(station.longitude)
-            remaining_range = self.max_range  # Full tank
+            # Update state
+            current_lat = float(station.latitude)
+            current_lon = float(station.longitude)
+            # Find the closest point in geometry to this station to resume walking
+            current_geo_idx = self._find_closest_point_idx(
+                geometry, current_lat, current_lon
+            )
 
-        return fuel_stops
+        return fuel_stops, safety_insights
+
+    def _calculate_geometry_distance(
+        self, geometry: list[dict[str, float]], start_idx: int
+    ) -> float:
+        """Sum exact road distance from a point in geometry to the end."""
+        total = 0.0
+        for i in range(start_idx, len(geometry) - 1):
+            total += haversine(
+                geometry[i]["lat"],
+                geometry[i]["lon"],
+                geometry[i + 1]["lat"],
+                geometry[i + 1]["lon"],
+            )
+        return total
+
+    def _find_closest_point_idx(
+        self, geometry: list[dict[str, float]], lat: float, lon: float
+    ) -> int:
+        """Find the index of the geometry point closest to given coordinates."""
+        min_dist = float("inf")
+        closest_idx = 0
+        for i, point in enumerate(geometry):
+            dist = haversine(lat, lon, point["lat"], point["lon"])
+            if dist < min_dist:
+                min_dist = dist
+                closest_idx = i
+        return closest_idx
+
+    def _identify_safety_insight(
+        self,
+        current_lat: float,
+        current_lon: float,
+        optimal_station: FuelStation,
+        distance_to_optimal: float,
+    ) -> dict[str, Any] | None:
+        """
+        Check if the segment violates the 4-hour safety rule (approx 240 miles).
+        If so, recommend a 'Safety Stop' between 220-260 miles.
+        """
+        if distance_to_optimal < 220:
+            return None
+
+        # Find the cheapest station in the 220-260 mile safety window
+        bbox = get_bounding_box(current_lat, current_lon, 260)
+        safety_candidates = FuelStation.objects.filter(
+            latitude__gte=bbox["lat_min"],
+            latitude__lte=bbox["lat_max"],
+            longitude__gte=bbox["lon_min"],
+            longitude__lte=bbox["lon_max"],
+        )
+
+        best_safety_stop = None
+        min_price = float("inf")
+
+        for station in safety_candidates:
+            dist = haversine(
+                current_lat,
+                current_lon,
+                float(station.latitude),
+                float(station.longitude),
+            )
+            if 220 <= dist <= 260:
+                if float(station.retail_price) < min_price:
+                    min_price = float(station.retail_price)
+                    best_safety_stop = station
+
+        if best_safety_stop is None:
+            return None
+
+        if best_safety_stop.pk == optimal_station.pk:
+            return None
+
+        # Calculate price delta
+        optimal_price = float(optimal_station.retail_price)
+        safety_price = float(best_safety_stop.retail_price)
+        price_delta_pct = float(((safety_price - optimal_price) / optimal_price) * 100)
+
+        # Estimate travel time to the optimal stop (the one we are comparing against)
+        travel_time_h = float(distance_to_optimal / 60.0)
+
+        # Narrow type for Mypy/Pyre
+        stop_name = str(best_safety_stop.truckstop_name)
+        stop_city = str(best_safety_stop.city)
+        stop_state = str(best_safety_stop.state)
+        stop_lat = float(best_safety_stop.latitude)
+        stop_lon = float(best_safety_stop.longitude)
+        stop_price = float(best_safety_stop.retail_price)
+
+        return {
+            "type": "DRIVER_FATIGUE_WARNING",
+            "message": (
+                f"Driver Fatigue Warning: Continuous driving will reach {travel_time_h:.1f}h. "
+                f"We suggest a stop near {stop_city}, {stop_state} to respect safety guidelines. "
+                f"The cheapest station in this 220-260mi window is {abs(price_delta_pct):.1f}% "
+                f"{'more' if price_delta_pct > 0 else 'less'} expensive than the cost-optimal station "
+                f"found at {float(distance_to_optimal):.1f} miles."
+            ),
+            "safety_stop": {
+                "name": stop_name,
+                "city": stop_city,
+                "price": stop_price,
+                "distance_miles": float(
+                    f"{float(haversine(current_lat, current_lon, stop_lat, stop_lon)):.1f}"
+                ),
+            },
+        }
+
+    def _generate_initial_safety_insights(
+        self, distance: float
+    ) -> list[dict[str, Any]]:
+        """Generate static warnings for routes that don't need fuel stops but are long."""
+        if distance > 240:
+            time_h = float(distance / 60.0)
+            return [
+                {
+                    "type": "DRIVER_FATIGUE_WARNING",
+                    "message": (
+                        f"Warning: This segment is {float(distance):.1f} miles long (~{time_h:.1f}h). "
+                        "Although no fuel stops are required, we recommend a rest break after 4 hours."
+                    ),
+                }
+            ]
+        return []
 
     def _find_best_station(
         self,
@@ -174,21 +290,9 @@ class RouteOptimizationService:
         dest_lon: float,
     ) -> FuelStation | None:
         """
-        Find cheapest fuel station within range that allows reaching destination.
-
-        Uses bounding box pre-filter + Haversine refinement for performance.
-
-        Args:
-            lat: Current latitude
-            lon: Current longitude
-            max_distance: Maximum search radius (remaining range)
-            dest_lat: Destination latitude
-            dest_lon: Destination longitude
-
-        Returns:
-            Best FuelStation or None if no stations found
+        Find cheapest fuel station within range.
+        Greedy choice: pick the cheapest station that is within our reach.
         """
-        # Step 1: Bounding box pre-filter (fast, uses indexes)
         bbox = get_bounding_box(lat, lon, max_distance)
 
         candidates = FuelStation.objects.filter(
@@ -196,29 +300,27 @@ class RouteOptimizationService:
             latitude__lte=bbox["lat_max"],
             longitude__gte=bbox["lon_min"],
             longitude__lte=bbox["lon_max"],
-        ).order_by("retail_price")[:100]  # Top 100 cheapest
+        ).order_by("retail_price")[:100]
 
-        # Step 2: Haversine refinement + Greedy selection
+        current_dist_to_dest = haversine(lat, lon, dest_lat, dest_lon)
+
         for station in candidates:
-            distance_to_station = haversine(
+            dist_to_station = haversine(
                 lat, lon, float(station.latitude), float(station.longitude)
             )
 
-            # Is station within range?
-            if distance_to_station > max_distance:
-                continue
+            if dist_to_station <= max_distance:
+                # Progress check: Is this station closer to destination than we are?
+                # (Or at least not too far back if it's extremely cheap)
+                dist_from_station_to_dest = haversine(
+                    float(station.latitude),
+                    float(station.longitude),
+                    dest_lat,
+                    dest_lon,
+                )
 
-            # Can we reach destination from this station?
-            distance_from_station_to_dest = haversine(
-                float(station.latitude),
-                float(station.longitude),
-                dest_lat,
-                dest_lon,
-            )
-
-            # Greedy: pick first (cheapest) viable station
-            if distance_from_station_to_dest <= self.max_range:
-                return station
+                if dist_from_station_to_dest < current_dist_to_dest:
+                    return station
 
         return None
 

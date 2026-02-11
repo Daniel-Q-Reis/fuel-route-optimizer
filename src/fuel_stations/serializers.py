@@ -64,6 +64,23 @@ class RouteGeometryPointSerializer(serializers.Serializer[dict[str, float]]):  #
     lon = serializers.FloatField(read_only=True)
 
 
+class SafetyStopSerializer(serializers.Serializer[dict[str, Any]]):  # type: ignore[misc]
+    """Serializer for safety stop recommendation."""
+
+    name = serializers.CharField(read_only=True)
+    city = serializers.CharField(read_only=True)
+    price = serializers.FloatField(read_only=True)
+    distance_miles = serializers.FloatField(read_only=True)
+
+
+class SafetyInsightSerializer(serializers.Serializer[dict[str, Any]]):  # type: ignore[misc]
+    """Serializer for safety insights."""
+
+    type = serializers.CharField(read_only=True)
+    message = serializers.CharField(read_only=True)
+    safety_stop = SafetyStopSerializer(read_only=True, required=False)
+
+
 class RouteSerializer(serializers.Serializer[dict[str, Any]]):  # type: ignore[misc]
     """Serializer for route information."""
 
@@ -77,5 +94,6 @@ class RouteOptimizationResponseSerializer(serializers.Serializer[dict[str, Any]]
 
     route = RouteSerializer(read_only=True)
     fuel_stops = FuelStopSerializer(many=True, read_only=True)
+    safety_insights = SafetyInsightSerializer(many=True, read_only=True)
     total_cost = serializers.FloatField(read_only=True)
     total_distance_miles = serializers.FloatField(read_only=True)

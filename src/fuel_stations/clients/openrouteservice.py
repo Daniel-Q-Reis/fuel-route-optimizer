@@ -106,30 +106,11 @@ class ORSClient:
     ) -> dict[str, Any]:
         """
         Get route information from OpenRouteService Directions API.
-
-        Args:
-            start_lat: Starting latitude
-            start_lon: Starting longitude
-            end_lat: Ending latitude
-            end_lon: Ending longitude
-
-        Returns:
-            Dictionary with route information:
-            {
-                'distance_miles': float,
-                'duration_hours': float,
-                'geometry': [{'lat': float, 'lon': float}, ...]
-            }
-
-        Raises:
-            RouteNotFoundError: If route cannot be found
-
-        Example:
-            >>> client = ORSClient()
-            >>> route = client.get_directions(34.05, -118.25, 40.71, -74.01)
-            >>> print(f"Distance: {route['distance_miles']} miles")
+        We request GeoJSON format to get coordinates for distance tracking.
         """
-        # ORS expects coordinates as [lon, lat]
+        # Use the geojson endpoint for easier coordinate access
+        url = self.DIRECTIONS_URL + "/geojson"
+
         coordinates = [[start_lon, start_lat], [end_lon, end_lat]]
 
         headers = {
@@ -140,9 +121,7 @@ class ORSClient:
         body = {"coordinates": coordinates}
 
         try:
-            response = self.session.post(
-                self.DIRECTIONS_URL, json=body, headers=headers, timeout=10
-            )
+            response = self.session.post(url, json=body, headers=headers, timeout=10)
             response.raise_for_status()
             data = response.json()
         except requests.exceptions.RequestException as e:
@@ -151,25 +130,20 @@ class ORSClient:
                 f"to ({end_lat}, {end_lon}): {e}"
             ) from e
 
-        # Parse response
-        routes = data.get("routes", [])
-        if not routes:
-            raise RouteNotFoundError(
-                f"No route found from ({start_lat}, {start_lon}) "
-                f"to ({end_lat}, {end_lon})"
-            )
+        # In GeoJSON format, routes are in Features
+        features = data.get("features", [])
+        if not features:
+            raise RouteNotFoundError("No route found in GeoJSON response")
 
-        route = routes[0]
-        summary = route["summary"]
+        feature = features[0]
+        properties = feature["properties"]["summary"]
 
-        # Convert meters to miles (1 meter = 0.000621371 miles)
-        distance_miles = summary["distance"] * 0.000621371
+        # Convert meters to miles
+        distance_miles = properties["distance"] * 0.000621371
+        duration_hours = properties["duration"] / 3600.0
 
-        # Convert seconds to hours
-        duration_hours = summary["duration"] / 3600.0
-
-        # Extract geometry (list of [lon, lat] points)
-        geometry_raw = route["geometry"]["coordinates"]
+        # Extract geometry coordinates
+        geometry_raw = feature["geometry"]["coordinates"]
         geometry = [{"lat": coord[1], "lon": coord[0]} for coord in geometry_raw]
 
         return {

@@ -81,84 +81,39 @@ With 475-mile effective: Refueled at mile 450 ✅
 
 ## Decision
 
-### Implementation: Configurable Safety Margin
-```python
-# config/settings.py
-MAX_VEHICLE_RANGE_MILES = 500  # Theoretical maximum (assessment spec)
+### Implementation: Safety Insights Engine
 
-# Fuel reserve safety margin (0.0 = no margin, 0.1 = 10% reserve)
-SAFETY_MARGIN_PERCENTAGE = float(os.getenv('SAFETY_MARGIN_PERCENTAGE', '0.0'))
+Instead of forcing a "Safe Mode" that could compromise the primary "Cost-Effective" requirement, we implemented a **Safety Insights Engine**.
 
-# Effective operating range
-EFFECTIVE_RANGE_MILES = MAX_VEHICLE_RANGE_MILES * (1 - SAFETY_MARGIN_PERCENTAGE)
-```
+**How it works**:
+1. **Cost-Optimal Stop**: The algorithm first identifies the cheapest fuel station within the 500-mile theoretical range (Greedy approach).
+2. **Analysis Segment**: It then analyzes the distance traveled since the last stop.
+3. **Safety Window (220-260 miles)**: If the segment exceeds 220 miles (~4 hours), the engine identifies the cheapest station within a medical-recommended rest window (220-260 miles).
+4. **Insight Reporting**:
+   - It calculates the price difference between the "Safety Stop" and the "Optimal Cost Stop".
+   - It returns a `DRIVER_FATIGUE_WARNING` with the city, distance, and price delta percentage.
+   - The driver can then make an informed decision: "Is it worth paying 2% more to stop 2 hours earlier at a safer interval?"
 
-**Default for Assessment**: `SAFETY_MARGIN_PERCENTAGE = 0.0`
-- Uses full 500 miles (strictly minimizes cost)
-- Satisfies test requirements
-- **Trade-off**: Maximum cost savings, higher risk
+**Default Configuration**:
+- `SAFETY_MARGIN_PERCENTAGE = 0.0` (Assessment compliance)
+- Uses full 500-mile segments for cost calculation, but **always** displays warnings for segments > 240 miles.
 
-**Production Recommendation**: `SAFETY_MARGIN_PERCENTAGE = 0.06` (5-6%)
-- Effective range: 470-475 miles
-- Leaves 25-30 mile buffer for real-world conditions
-- **Trade-off**: Slightly higher cost (~$2-5), significantly lower risk
-
-### Documentation Strategy
-**We will**:
-1. ✅ Document BOTH safety concerns (driver fatigue + fuel reserve)
-2. ✅ Implement configurable margin (default=0.0 for assessment)
-3. ✅ Provide clear .env.example guidance for production
-4. ✅ Demonstrate domain knowledge in Loom video
-
-## Proposed Future Enhancements
-
-### Enhancement 1: "Safe Mode" (Driver Fatigue Protection)
-
-**API Request Parameter**:
+## Implemented "Safety Insights"
 ```json
-{
-  "start": "Los Angeles, CA",
-  "end": "San Francisco, CA",
-  "safe_mode": true,  // Enable driver safety constraints
-  "fuel_margin": 0.1  // 10% fuel reserve (default: 0.0)
+ {
+  "type": "DRIVER_FATIGUE_WARNING",
+  "message": "Continuous driving exceeds 4 hours (7.2h total). Recommended rest stop near Dallas, TX. The cheapest station in this safety window is 1.5% more expensive than the cost-optimal stop at 450.2 miles.",
+  "safety_stop": {
+    "name": "Flying J Travel Center",
+    "city": "Dallas",
+    "price": 3.45,
+    "distance_miles": 245.1
+  }
 }
 ```
 
-**Response with Warnings**:
-```json
-{
-  "route": {...},
-  "fuel_stops": [...],
-  "total_cost": 123.45,
-  "warnings": [
-    {
-      "type": "DRIVER_FATIGUE",
-      "message": "Segment exceeds 4-hour safe limit. Consider rest stop.",
-      "segments": [
-        {"from": "Station A", "to": "Station B", "duration_hours": 6.2}
-      ]
-    },
-    {
-      "type": "FUEL_MARGIN",
-      "message": "Operating with 10% fuel reserve (50 miles buffer).",
-      "effective_range_miles": 450
-    }
-  ]
-}
-```
-
-**Logic**:
-```python
-if safe_mode:
-    MAX_SEGMENT_DURATION_HOURS = 4  # Driver safety
-    SAFETY_MARGIN_PERCENTAGE = fuel_margin  # Fuel reserve
-
-    # Force stops based on BOTH time and fuel constraints
-    # Optimize for: Safety first, then cost
-else:
-    # Pure cost optimization (assessment mode)
-    SAFETY_MARGIN_PERCENTAGE = 0.0
-```
+## Enhancement: Geometry-Aware Tracking
+Critical refinement: The optimization logic now **iterates through road geometry coordinates** rather than using line-of-sight (Haversine) estimates. This ensures the 500-mile limit is respected based on actual road distance, preventing fuel depletion in winding or mountainous terrain.
 
 ### Enhancement 2: Adaptive Margin (Smart Reserve)
 
