@@ -64,7 +64,7 @@ if "yes" == "yes":
 
 LOCAL_APPS = [
     "src.apps.core",
-    # Your local apps go here
+    "fuel_stations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

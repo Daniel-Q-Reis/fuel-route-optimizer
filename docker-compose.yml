@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     healthcheck:
       # Check server ready by connecting to 'postgres' database (always exists)
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres -h 127.0.0.1"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres -h 127.0.0.1" ]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -24,7 +24,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -52,7 +52,7 @@ services:
       COLLECTSTATIC: "0"
     ports:
       - "8000:8000"
-      - "5678:5678"  # debugpy port for VS Code
+      - "5678:5678" # debugpy port for VS Code
     depends_on:
       db:
         condition: service_healthy
@@ -62,60 +62,15 @@ services:
       - ./:/usr/src/app:cached
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/admin/login/"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/admin/login/" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
 
-
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    environment:
-      DJANGO_SETTINGS_MODULE: fuel-route-optimizer.settings.development
-      DB_NAME: ${POSTGRES_DB:-fuel-route-optimizer_db}
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DB_HOST: db
-      DB_PORT: "5432"
-    command: ["/bin/bash", "/opt/docker/scripts/celery-worker.sh"]
-    volumes:
-      - ./:/usr/src/app:cached
-    depends_on:
-      web:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  celery_beat:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    environment:
-      DJANGO_SETTINGS_MODULE: fuel-route-optimizer.settings.development
-      DB_NAME: ${POSTGRES_DB:-fuel-route-optimizer_db}
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DB_HOST: db
-      DB_PORT: "5432"
-    command: ["/bin/bash", "/opt/docker/scripts/celery-beat.sh"]
-    volumes:
-      - ./:/usr/src/app:cached
-    depends_on:
-      web:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-
 volumes:
   db-data:
+
 
 networks:
   default:
