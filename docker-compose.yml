@@ -43,6 +43,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      # OpenRouteService API key
+      OPENROUTESERVICE_API_KEY: ${OPENROUTESERVICE_API_KEY}
       # Debugpy configuration for VS Code
       DEBUGPY: "1"
       DEBUGPY_WAIT_FOR_CLIENT: "0"

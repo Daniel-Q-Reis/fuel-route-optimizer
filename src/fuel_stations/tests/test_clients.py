@@ -120,11 +120,13 @@ class ORSClientDirectionsTest(TestCase):
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "routes": [
+            "features": [
                 {
-                    "summary": {
-                        "distance": 402336.0,  # meters (250 miles)
-                        "duration": 14400.0,  # seconds (4 hours)
+                    "properties": {
+                        "summary": {
+                            "distance": 402336.0,  # meters (250 miles)
+                            "duration": 14400.0,  # seconds (4 hours)
+                        }
                     },
                     "geometry": {
                         "coordinates": [
@@ -153,7 +155,7 @@ class ORSClientDirectionsTest(TestCase):
         # Mock API response with empty routes
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"routes": []}
+        mock_response.json.return_value = {"features": []}
         mock_post.return_value = mock_response
 
         from fuel_stations.clients.openrouteservice import RouteNotFoundError
@@ -194,9 +196,9 @@ class ORSClientDirectionsTest(TestCase):
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "routes": [
+            "features": [
                 {
-                    "summary": {"distance": 100000, "duration": 3600},
+                    "properties": {"summary": {"distance": 100000, "duration": 3600}},
                     "geometry": {
                         "coordinates": [
                             [-89.65, 39.78],  # Springfield, IL [lon, lat]

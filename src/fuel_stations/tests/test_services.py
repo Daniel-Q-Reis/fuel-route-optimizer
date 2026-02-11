@@ -175,12 +175,14 @@ class RouteOptimizationServiceTest(TestCase):
         """Test that cheapest viable station is selected (greedy)."""
         service = RouteOptimizationService()
 
+        # Station 1 (Cheap) is at (39.78, -89.65)
+        # We start a bit south-east and head towards Station 1
         best_station = service._find_best_station(
             lat=39.0,
-            lon=-90.0,
+            lon=-89.0,
             max_distance=500,
-            dest_lat=39.0,
-            dest_lon=-95.0,
+            dest_lat=40.0,
+            dest_lon=-90.0,
         )
 
         self.assertIsNotNone(best_station)
