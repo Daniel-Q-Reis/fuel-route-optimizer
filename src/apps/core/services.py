@@ -42,7 +42,7 @@ def create_post(*, author: "User", title: str, content: str) -> Post:
     post = repositories.create_post(author=author, title=title, content=content)
     logger.info(
         "Post created successfully.",
-        extra={"post_id": post.id, "author_id": author.id},
+        extra={"post_id": post.pk, "author_id": author.pk},
     )
     # In a real application, you might have more logic here:
     # - Send a notification

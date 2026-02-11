@@ -1,8 +1,8 @@
 # ADR 0006: Database Query Performance Optimization
 
-**Status:** Accepted  
-**Date:** 2026-02-10  
-**Decision Makers:** Backend Team  
+**Status:** Accepted
+**Date:** 2026-02-10
+**Decision Makers:** Backend Team
 
 ## Context
 
@@ -36,21 +36,21 @@ class FuelStation(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=2, db_index=True)
     retail_price = models.DecimalField(
-        max_digits=5, 
-        decimal_places=2, 
+        max_digits=5,
+        decimal_places=2,
         db_index=True  # Critical for ORDER BY price
     )
     latitude = models.DecimalField(
-        max_digits=9, 
-        decimal_places=6, 
+        max_digits=9,
+        decimal_places=6,
         db_index=True
     )
     longitude = models.DecimalField(
-        max_digits=9, 
-        decimal_places=6, 
+        max_digits=9,
+        decimal_places=6,
         db_index=True
     )
-    
+
     class Meta:
         indexes = [
             # Composite index for spatial queries
@@ -116,7 +116,7 @@ Query time: -30% (less I/O)
 ```python
 def find_nearby_stations(lat, lon, radius_miles, max_results=50):
     bbox = get_bounding_box(lat, lon, radius_miles)
-    
+
     candidates = FuelStation.objects.filter(
         latitude__gte=bbox['lat_min'],
         latitude__lte=bbox['lat_max'],
@@ -126,7 +126,7 @@ def find_nearby_stations(lat, lon, radius_miles, max_results=50):
         'id', 'truckstop_name', 'city', 'state',
         'latitude', 'longitude', 'retail_price'
     ).order_by('retail_price')[:max_results]
-    
+
     return candidates
 ```
 
@@ -253,7 +253,7 @@ class QueryPerformanceTest(TestCase):
         with self.assertNumQueries(1):  # Only 1 query expected
             stations = find_nearby_stations(34.0522, -118.2437, 500)
             list(stations)  # Force evaluation
-    
+
     def test_query_execution_time(self):
         """Benchmark query speed."""
         import time
@@ -261,7 +261,7 @@ class QueryPerformanceTest(TestCase):
         stations = find_nearby_stations(34.0522, -118.2437, 500)
         list(stations)
         elapsed = time.time() - start
-        
+
         self.assertLess(elapsed, 0.01)  # Must be <10ms
 ```
 

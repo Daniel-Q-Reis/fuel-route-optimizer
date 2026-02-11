@@ -4,30 +4,48 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='FuelStation',
+            name="FuelStation",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('truckstop_name', models.CharField(max_length=255)),
-                ('address', models.TextField()),
-                ('city', models.CharField(max_length=100)),
-                ('state', models.CharField(db_index=True, max_length=2)),
-                ('retail_price', models.DecimalField(db_index=True, decimal_places=2, max_digits=5)),
-                ('latitude', models.DecimalField(db_index=True, decimal_places=6, max_digits=9)),
-                ('longitude', models.DecimalField(db_index=True, decimal_places=6, max_digits=9)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("truckstop_name", models.CharField(max_length=255)),
+                ("address", models.TextField()),
+                ("city", models.CharField(max_length=100)),
+                ("state", models.CharField(db_index=True, max_length=2)),
+                (
+                    "retail_price",
+                    models.DecimalField(db_index=True, decimal_places=2, max_digits=5),
+                ),
+                (
+                    "latitude",
+                    models.DecimalField(db_index=True, decimal_places=6, max_digits=9),
+                ),
+                (
+                    "longitude",
+                    models.DecimalField(db_index=True, decimal_places=6, max_digits=9),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'Fuel Station',
-                'verbose_name_plural': 'Fuel Stations',
-                'indexes': [models.Index(fields=['latitude', 'longitude'], name='idx_location'), models.Index(fields=['retail_price'], name='idx_price')],
+                "verbose_name": "Fuel Station",
+                "verbose_name_plural": "Fuel Stations",
+                "indexes": [
+                    models.Index(fields=["latitude", "longitude"], name="idx_location"),
+                    models.Index(fields=["retail_price"], name="idx_price"),
+                ],
             },
         ),
     ]

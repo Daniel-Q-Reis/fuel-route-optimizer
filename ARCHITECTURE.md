@@ -9,8 +9,8 @@ This document provides a high-level architectural overview of the **Fuel Route O
 ## System Overview
 
 ### Core Functionality
-**Input**: Start/End locations (USA addresses or coordinates)  
-**Output**: 
+**Input**: Start/End locations (USA addresses or coordinates)
+**Output**:
 - Optimized route map (via OpenRouteService)
 - Fuel stop locations with prices
 - Total fuel cost (10 MPG consumption rate)
@@ -68,7 +68,7 @@ OpenRouteService Geocoding API (rate-limited)
 PostgreSQL (stations with lat/lon + indexes)
 ```
 
-**Why ETL First?** 
+**Why ETL First?**
 - Assessment requires: *"Don't call the map API too much"*
 - Geocoding 8153 stations takes ~50 minutes once
 - API requests become instant (no geocoding delay)
@@ -127,13 +127,13 @@ All Architecture Decision Records are documented in `docs/adr/`:
 - **Goal**: Demonstrate senior-level domain thinking
 
 ### [ADR 0004: Route Optimization Algorithm](docs/adr/0004-route-optimization-algorithm.md)
-**Decision**: Greedy algorithm with look-ahead  
-**Why**: O(n×m) complexity, <50ms execution, near-optimal (within 2% of perfect)  
+**Decision**: Greedy algorithm with look-ahead
+**Why**: O(n×m) complexity, <50ms execution, near-optimal (within 2% of perfect)
 **Alternative Rejected**: Dijkstra (10x more complex, minimal cost improvement)
 
 ### [ADR 0005: Spatial Query Strategy](docs/adr/0005-spatial-queries-strategy.md)
-**Decision**: Haversine math (no PostGIS)  
-**Why**: 
+**Decision**: Haversine math (no PostGIS)
+**Why**:
 - Zero dependencies (stdlib only)
 - Faster with bounding box optimization (~2ms vs PostGIS ~10ms)
 - 99.9% accuracy (sufficient for fuel stops)
@@ -172,22 +172,22 @@ class FuelStation(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=2, db_index=True)
     retail_price = models.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
         db_index=True  # For ORDER BY price
     )
     latitude = models.DecimalField(
-        max_digits=9, 
+        max_digits=9,
         decimal_places=6,
         db_index=True
     )
     longitude = models.DecimalField(
-        max_digits=9, 
+        max_digits=9,
         decimal_places=6,
         db_index=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['latitude', 'longitude']),
@@ -203,7 +203,7 @@ class FuelStation(models.Model):
 
 ### Greedy Fuel Stop Optimization
 
-**Input**: Route geometry, max range (500 miles), fuel stations DB  
+**Input**: Route geometry, max range (500 miles), fuel stations DB
 **Output**: List of optimal fuel stops
 
 **Pseudocode**:
@@ -219,7 +219,7 @@ class FuelStation(models.Model):
       - SELECT cheapest station that allows reaching next segment
       - ADD to fuel_stops
       - remaining_range = 500 (refuel)
-   
+
    b. remaining_range -= segment_distance
    c. current_position = segment_end
 
@@ -308,13 +308,13 @@ def test_api_response_time():
 services:
   db:
     image: postgres:16
-  
+
   web:
     build: .
     command: gunicorn config.wsgi:application
     depends_on:
       - db
-  
+
   nginx:
     image: nginx:alpine
     depends_on:
@@ -370,6 +370,6 @@ Focus on:
 
 ## Contact
 
-**Developer**: [Your Name]  
-**Assessment**: Backend Django Engineer  
+**Developer**: [Your Name]
+**Assessment**: Backend Django Engineer
 **Deadline**: [Date + 3 days]

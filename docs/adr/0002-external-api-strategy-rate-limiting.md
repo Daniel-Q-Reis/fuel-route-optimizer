@@ -1,8 +1,8 @@
 # ADR 0002: External API Strategy & Rate Limiting
 
-**Status:** Accepted  
-**Date:** 2026-02-10  
-**Decision Makers:** Backend Team  
+**Status:** Accepted
+**Date:** 2026-02-10
+**Decision Makers:** Backend Team
 
 ## Context
 

@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime
+from typing import Any
 
 from django.conf import settings
 from drf_spectacular.utils import OpenApiExample, extend_schema
@@ -17,7 +18,7 @@ from .serializers import HealthCheckSerializer, PostSerializer
 logger = logging.getLogger(__name__)
 
 
-class HealthCheckAPIView(APIView):
+class HealthCheckAPIView(APIView):  # type: ignore[misc]
     """
     API view for health check.
 
@@ -28,7 +29,7 @@ class HealthCheckAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = HealthCheckSerializer
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         """
         Return the health status of the application.
         """
@@ -43,7 +44,7 @@ class HealthCheckAPIView(APIView):
 
 
 @extend_schema(tags=["Posts"])
-class PostViewSet(viewsets.ModelViewSet):
+class PostViewSet(viewsets.ModelViewSet):  # type: ignore[misc]
     """
     API endpoint that allows posts to be viewed or edited.
 
@@ -65,7 +66,7 @@ class PostViewSet(viewsets.ModelViewSet):
         summary="List all active posts",
         description="Returns a paginated list of all posts that are marked as active.",
     )
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         return super().list(request, *args, **kwargs)
 
     @extend_schema(
@@ -82,14 +83,14 @@ class PostViewSet(viewsets.ModelViewSet):
             ),
         ],
     )
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         return super().create(request, *args, **kwargs)
 
     @extend_schema(
         summary="Retrieve a post",
         description="Retrieves a single post by its unique slug.",
     )
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         return super().retrieve(request, *args, **kwargs)
 
     @extend_schema(
@@ -106,31 +107,31 @@ class PostViewSet(viewsets.ModelViewSet):
             ),
         ],
     )
-    def update(self, request, *args, **kwargs):
+    def update(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
         summary="Partially update a post",
         description="Partially updates a post. Only the author of the post can perform this action.",
     )
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
         summary="Delete a post",
         description="Soft-deletes a post by marking it as inactive. Only the author of the post can perform this action.",
     )
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         return super().destroy(request, *args, **kwargs)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: Any) -> None:
         """
         Overrides the default create method to use the `create_post` service.
         This ensures that the author is correctly set to the request user.
         """
         services.create_post(author=self.request.user, **serializer.validated_data)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Any) -> None:
         """
         Overrides the default destroy method to perform a soft delete.
         """

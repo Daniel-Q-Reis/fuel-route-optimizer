@@ -2,7 +2,6 @@
 
 import io
 from decimal import Decimal
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from django.core.management import call_command
@@ -15,7 +14,7 @@ from fuel_stations.models import FuelStation
 class LoadFuelStationsCommandTest(TestCase):
     """Test cases for the load_fuel_stations management command."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         self.csv_content = """OPIS Truckstop ID,Truckstop Name,Address,City,State,Rack ID,Retail Price
 1,TEST TRUCK STOP,"I-55, EXIT 100",Springfield,IL,280,3.45
@@ -26,8 +25,12 @@ class LoadFuelStationsCommandTest(TestCase):
     @patch("fuel_stations.management.commands.load_fuel_stations.ORSClient")
     @patch("fuel_stations.management.commands.load_fuel_stations.time.sleep")
     def test_command_loads_stations_successfully(
-        self, mock_sleep, mock_ors_client, mock_open, mock_exists
-    ):
+        self,
+        mock_sleep: Mock,
+        mock_ors_client: Mock,
+        mock_open: Mock,
+        mock_exists: Mock,
+    ) -> None:
         """Test command successfully loads stations from CSV."""
         # Mock CSV file
         mock_exists.return_value = True
@@ -69,8 +72,12 @@ class LoadFuelStationsCommandTest(TestCase):
     @patch("fuel_stations.management.commands.load_fuel_stations.ORSClient")
     @patch("fuel_stations.management.commands.load_fuel_stations.time.sleep")
     def test_command_idempotency(
-        self, mock_sleep, mock_ors_client, mock_open, mock_exists
-    ):
+        self,
+        mock_sleep: Mock,
+        mock_ors_client: Mock,
+        mock_open: Mock,
+        mock_exists: Mock,
+    ) -> None:
         """Test command skips existing stations (idempotency)."""
         # Create existing station
         FuelStation.objects.create(
@@ -107,8 +114,12 @@ class LoadFuelStationsCommandTest(TestCase):
     @patch("fuel_stations.management.commands.load_fuel_stations.ORSClient")
     @patch("fuel_stations.management.commands.load_fuel_stations.time.sleep")
     def test_command_handles_geocoding_errors(
-        self, mock_sleep, mock_ors_client, mock_open, mock_exists
-    ):
+        self,
+        mock_sleep: Mock,
+        mock_ors_client: Mock,
+        mock_open: Mock,
+        mock_exists: Mock,
+    ) -> None:
         """Test command continues on geocoding errors."""
         # Mock CSV file
         mock_exists.return_value = True
@@ -136,7 +147,7 @@ class LoadFuelStationsCommandTest(TestCase):
         self.assertIn("Failed to geocode", output)
 
     @patch("fuel_stations.management.commands.load_fuel_stations.Path.exists")
-    def test_command_handles_missing_csv(self, mock_exists):
+    def test_command_handles_missing_csv(self, mock_exists: Mock) -> None:
         """Test command handles missing CSV file gracefully."""
         # Mock missing CSV
         mock_exists.return_value = False

@@ -1,8 +1,8 @@
 # ADR 0001: Python 3.12 & Django 5.2 LTS Selection
 
-**Status:** Accepted  
-**Date:** 2026-02-10  
-**Decision Makers:** Backend Team  
+**Status:** Accepted
+**Date:** 2026-02-10
+**Decision Makers:** Backend Team
 
 ## Context
 

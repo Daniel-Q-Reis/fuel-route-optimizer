@@ -4,6 +4,7 @@ import logging
 import time
 import uuid
 
+from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
@@ -20,22 +21,25 @@ class RequestLoggingMiddleware(MiddlewareMixin):
     - User information if authenticated
     """
 
-    def process_request(self, request):
+    def process_request(self, request: HttpRequest) -> HttpResponse | None:
         """Add request metadata and start timer."""
-        request.start_time = time.time()
-        request.request_id = str(uuid.uuid4())[:8]
+        request.start_time = time.time()  # type: ignore[attr-defined]
+        request.request_id = str(uuid.uuid4())[:8]  # type: ignore[attr-defined]
 
         # Add request ID to response headers for debugging
-        request._request_id = request.request_id
+        request._request_id = request.request_id  # type: ignore[attr-defined]
 
         return None
 
-    def process_response(self, request, response):
+    def process_response(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> HttpResponse:
         """Log request completion with timing and response info."""
         if not hasattr(request, "start_time"):
             return response
 
-        duration = time.time() - request.start_time
+        start_time = request.start_time
+        duration = time.time() - start_time
 
         # Skip logging for static files and health checks
         skip_paths = ["/static/", "/media/", "/favicon.ico"]
@@ -48,7 +52,7 @@ class RequestLoggingMiddleware(MiddlewareMixin):
             "method": request.method,
             "path": request.path,
             "status_code": response.status_code,
-            "duration_ms": round(duration * 1000, 2),
+            "duration_ms": round(float(duration) * 1000, 2),
             "user_agent": request.META.get("HTTP_USER_AGENT", "")[:100],
             "ip_address": self._get_client_ip(request),
             "timestamp": timezone.now().isoformat(),
@@ -56,8 +60,8 @@ class RequestLoggingMiddleware(MiddlewareMixin):
 
         # Add user info if authenticated
         if hasattr(request, "user") and request.user.is_authenticated:
-            log_data["user_id"] = request.user.id
-            log_data["username"] = request.user.username
+            log_data["user_id"] = getattr(request.user, "id", None)
+            log_data["username"] = getattr(request.user, "username", "")
 
         # Add query params for GET requests (be careful with sensitive data)
         if request.method == "GET" and request.GET:
@@ -79,17 +83,17 @@ class RequestLoggingMiddleware(MiddlewareMixin):
             logger.info(f"Request completed: {log_data}")
 
         # Add request ID to response headers for debugging
-        response["X-Request-ID"] = request.request_id
+        response["X-Request-ID"] = getattr(request, "request_id", "unknown")
 
         return response
 
-    def _get_client_ip(self, request):
+    def _get_client_ip(self, request: HttpRequest) -> str:
         """Extract client IP address from request."""
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0]
+            ip: str = str(x_forwarded_for).split(",")[0]
             return ip.strip()
-        return request.META.get("REMOTE_ADDR", "unknown")
+        return str(request.META.get("REMOTE_ADDR", "unknown"))
 
 
 class SecurityHeadersMiddleware(MiddlewareMixin):
@@ -99,7 +103,9 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
     common web vulnerabilities.
     """
 
-    def process_response(self, request, response):
+    def process_response(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> HttpResponse:
         """Add security headers to response."""
         # Prevent page from being displayed in a frame/iframe
         response["X-Frame-Options"] = "DENY"
@@ -126,9 +132,9 @@ class HealthCheckMiddleware(MiddlewareMixin):
     to ensure fast response times for load balancers.
     """
 
-    def process_request(self, request):
+    def process_request(self, request: HttpRequest) -> HttpResponse | None:
         """Skip processing for health check endpoints."""
         if request.path in ["/health/", "/health", "/ping"]:
             # Mark request as health check to skip other middleware
-            request._is_health_check = True
+            request._is_health_check = True  # type: ignore[attr-defined]
         return None

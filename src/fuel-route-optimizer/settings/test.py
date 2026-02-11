@@ -7,6 +7,8 @@ Uses SQLite in memory and local cache to avoid Docker/Redis/PostgreSQL dependenc
 
 import tempfile
 
+from typing import Any
+
 from .base import *  # noqa: F401,F403
 
 # Database: SQLite in memory for fast, isolated tests
@@ -57,7 +59,7 @@ SECURE_BROWSER_XSS_FILTER = False
 SECURE_CONTENT_TYPE_NOSNIFF = False
 
 # REST Framework: Disable throttling in tests
-REST_FRAMEWORK = {
+REST_FRAMEWORK: dict[str, Any] = {
     **REST_FRAMEWORK,  # noqa: F405
     "DEFAULT_THROTTLE_CLASSES": [],
     "DEFAULT_THROTTLE_RATES": {},
@@ -101,10 +103,10 @@ STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 # Disable migrations for faster tests (use --create-db if needed)
 # This can be overridden with --migrations in pytest
 class DisableMigrations:
-    def __contains__(self, item):
+    def __contains__(self, item: object) -> bool:
         return True
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> str | None:
         return None
 
 

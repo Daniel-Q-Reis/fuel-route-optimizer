@@ -1,11 +1,8 @@
 """OpenRouteService API client for geocoding addresses."""
 
-import time
-from typing import Tuple
-
-import requests
+import requests  # type: ignore[import-untyped]
 from decouple import config
-from requests.adapters import HTTPAdapter
+from requests.adapters import HTTPAdapter  # type: ignore[import-untyped]
 from urllib3.util.retry import Retry
 
 
@@ -54,7 +51,7 @@ class ORSClient:
         session.mount("http://", adapter)
         return session
 
-    def geocode(self, address: str) -> Tuple[float, float]:
+    def geocode(self, address: str) -> tuple[float, float]:
         """
         Geocode an address to (latitude, longitude) coordinates.
 
@@ -76,7 +73,9 @@ class ORSClient:
 
         try:
             response = self.session.get(
-                self.BASE_URL, params=params, timeout=10  # 10 second timeout
+                self.BASE_URL,
+                params=params,
+                timeout=10,  # 10 second timeout
             )
             response.raise_for_status()
             data = response.json()
@@ -86,9 +85,7 @@ class ORSClient:
         # Extract coordinates from response
         features = data.get("features", [])
         if not features:
-            raise GeocodingError(
-                f"No geocoding results found for address: {address}"
-            )
+            raise GeocodingError(f"No geocoding results found for address: {address}")
 
         coordinates = features[0]["geometry"]["coordinates"]
         # OpenRouteService returns [lon, lat], we need (lat, lon)

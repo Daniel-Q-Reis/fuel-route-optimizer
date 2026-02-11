@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -13,16 +15,16 @@ fake = Faker()
 
 
 @pytest.fixture
-def api_client():
+def api_client() -> APIClient:
     """Pytest fixture for providing a DRF API client."""
     return APIClient()
 
 
 @pytest.fixture
-def user_data():
+def user_data() -> dict[str, Any]:
     """Pytest fixture for generating fake user data."""
     password = fake.password()
-    user = User.objects.create_user(
+    user = User.objects.create_user(  # type: ignore[attr-defined]
         username=fake.user_name(),
         email=fake.email(),
         password=password,
@@ -31,14 +33,14 @@ def user_data():
 
 
 @pytest.fixture
-def authenticated_client(api_client, user_data):
+def authenticated_client(api_client: APIClient, user_data: dict[str, Any]) -> APIClient:
     """Pytest fixture for providing an authenticated API client."""
     api_client.force_authenticate(user=user_data["user"])
     return api_client
 
 
 class CoreAPITestCase(TestCase):
-    def test_api_docs_is_available(self):
+    def test_api_docs_is_available(self) -> None:
         """Asserts that the API documentation (Swagger UI) is available and returns a 200 OK status."""
         url = reverse("swagger-ui")
         response = self.client.get(url)
@@ -46,7 +48,7 @@ class CoreAPITestCase(TestCase):
 
 
 @pytest.mark.django_db
-def test_health_check_api_view_status_code(api_client):
+def test_health_check_api_view_status_code(api_client: APIClient) -> None:
     """
     Tests that the HealthCheckAPIView returns a 200 OK status.
     """
@@ -56,7 +58,7 @@ def test_health_check_api_view_status_code(api_client):
 
 
 @pytest.mark.django_db
-def test_health_check_api_view_response_data(api_client):
+def test_health_check_api_view_response_data(api_client: APIClient) -> None:
     """
     Tests the response structure and content of the HealthCheckAPIView.
     """
@@ -74,7 +76,7 @@ def test_health_check_api_view_response_data(api_client):
 class TestPostAPI:
     """Tests for the Post API endpoints."""
 
-    def test_list_posts(self, api_client, user_data):
+    def test_list_posts(self, api_client: APIClient, user_data: dict[str, Any]) -> None:
         """Asserts that the API can list posts."""
         create_post(
             author=user_data["user"], title=fake.sentence(), content=fake.paragraph()
@@ -88,7 +90,7 @@ class TestPostAPI:
         assert response.status_code == 200
         assert len(response.data["results"]) == 2
 
-    def test_create_post(self, authenticated_client):
+    def test_create_post(self, authenticated_client: APIClient) -> None:
         """Asserts that an authenticated user can create a post."""
         post_data = {"title": fake.sentence(), "content": fake.paragraph()}
 
@@ -98,9 +100,11 @@ class TestPostAPI:
 
         assert response.status_code == 201
         assert Post.objects.count() == 1
-        assert Post.objects.first().title == post_data["title"]
+        post = Post.objects.first()
+        assert post is not None
+        assert post.title == post_data["title"]
 
-    def test_unauthenticated_create_post(self, api_client):
+    def test_unauthenticated_create_post(self, api_client: APIClient) -> None:
         """Asserts that an unauthenticated user cannot create a post."""
         post_data = {"title": fake.sentence(), "content": fake.paragraph()}
 
@@ -108,7 +112,9 @@ class TestPostAPI:
 
         assert response.status_code == 403
 
-    def test_retrieve_post(self, api_client, user_data):
+    def test_retrieve_post(
+        self, api_client: APIClient, user_data: dict[str, Any]
+    ) -> None:
         """Asserts that a post can be retrieved by its slug."""
         post = create_post(
             author=user_data["user"], title=fake.sentence(), content=fake.paragraph()
@@ -119,7 +125,9 @@ class TestPostAPI:
         assert response.status_code == 200
         assert response.data["title"] == post.title
 
-    def test_update_post(self, authenticated_client, user_data):
+    def test_update_post(
+        self, authenticated_client: APIClient, user_data: dict[str, Any]
+    ) -> None:
         """Asserts that an authenticated user can update a post."""
         post = create_post(
             author=user_data["user"], title=fake.sentence(), content=fake.paragraph()
@@ -134,7 +142,9 @@ class TestPostAPI:
         assert response.status_code == 200
         assert post.title == update_data["title"]
 
-    def test_delete_post(self, authenticated_client, user_data):
+    def test_delete_post(
+        self, authenticated_client: APIClient, user_data: dict[str, Any]
+    ) -> None:
         """Asserts that an authenticated user can soft-delete a post."""
         post = create_post(
             author=user_data["user"], title=fake.sentence(), content=fake.paragraph()
@@ -146,7 +156,9 @@ class TestPostAPI:
         assert response.status_code == 204
         assert post.is_active is False
 
-    def test_update_post_of_another_user(self, api_client, user_data):
+    def test_update_post_of_another_user(
+        self, api_client: APIClient, user_data: dict[str, Any]
+    ) -> None:
         """Asserts that a user cannot update a post of another user."""
         # Create a post with the first user
         post = create_post(
@@ -155,7 +167,7 @@ class TestPostAPI:
 
         # Create a second user and authenticate
         new_user_data = {
-            "user": User.objects.create_user(
+            "user": User.objects.create_user(  # type: ignore[attr-defined]
                 username=fake.user_name(), password=fake.password()
             ),
             "password": fake.password(),
@@ -170,7 +182,9 @@ class TestPostAPI:
 
         assert response.status_code == 403
 
-    def test_delete_post_of_another_user(self, api_client, user_data):
+    def test_delete_post_of_another_user(
+        self, api_client: APIClient, user_data: dict[str, Any]
+    ) -> None:
         """Asserts that a user cannot delete a post of another user."""
         # Create a post with the first user
         post = create_post(
@@ -179,7 +193,7 @@ class TestPostAPI:
 
         # Create a second user and authenticate
         new_user_data = {
-            "user": User.objects.create_user(
+            "user": User.objects.create_user(  # type: ignore[attr-defined]
                 username=fake.user_name(), password=fake.password()
             ),
             "password": fake.password(),

@@ -1,8 +1,8 @@
 # ADR 0003: Driver Safety & Fuel Reserve Strategy
 
-**Status:** Accepted (with documented concerns)  
-**Date:** 2026-02-10  
-**Decision Makers:** Backend Team  
+**Status:** Accepted (with documented concerns)
+**Date:** 2026-02-10
+**Decision Makers:** Backend Team
 
 ## Context
 
@@ -152,7 +152,7 @@ EFFECTIVE_RANGE_MILES = MAX_VEHICLE_RANGE_MILES * (1 - SAFETY_MARGIN_PERCENTAGE)
 if safe_mode:
     MAX_SEGMENT_DURATION_HOURS = 4  # Driver safety
     SAFETY_MARGIN_PERCENTAGE = fuel_margin  # Fuel reserve
-    
+
     # Force stops based on BOTH time and fuel constraints
     # Optimize for: Safety first, then cost
 else:
@@ -166,7 +166,7 @@ else:
 ```python
 def calculate_adaptive_margin(route_data):
     margin = 0.0
-    
+
     # Increase margin for risky conditions
     if route_data.has_mountain_passes:
         margin += 0.03  # +15 miles for elevation
@@ -174,7 +174,7 @@ def calculate_adaptive_margin(route_data):
         margin += 0.02  # +10 miles for stop-and-go
     if route_data.has_remote_segments:  # >100 miles between stations
         margin += 0.05  # +25 miles for isolation risk
-    
+
     return min(margin, 0.15)  # Cap at 15% (75 miles)
 ```
 
@@ -264,7 +264,7 @@ candidates = FuelStation.objects.filter(
 
 ### Loom Video Script (Key Talking Points)
 1. **Demo the API**: Show working with default settings (500-mile range)
-2. **Safety Insight #1 (Driver Fatigue)**: 
+2. **Safety Insight #1 (Driver Fatigue)**:
    - "500 miles = 8.3 hours continuous driving, violates US DOT regulations"
 3. **Safety Insight #2 (Fuel Reserve)**:
    - "Operating at theoretical maximum is asking for a dry tank. Real-world conditions (traffic, weather) increase consumption."

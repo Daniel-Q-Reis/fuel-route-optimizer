@@ -105,11 +105,11 @@ fuel-route-optimizer/
 The Cookiecutter template includes some directories that are NOT needed for this assessment:
 
 ### 1. `.devcontainer/`
-**Why**: We're using Docker Compose, not VS Code devcontainers.  
+**Why**: We're using Docker Compose, not VS Code devcontainers.
 **Action**: `rm -rf .devcontainer/`
 
 ### 2. `scripts/celery-*.sh` (Celery-related scripts)
-**Why**: No background tasks needed for this API.  
+**Why**: No background tasks needed for this API.
 **Files to delete**:
 - `scripts/celery-beat.sh`
 - `scripts/celery-worker.sh`

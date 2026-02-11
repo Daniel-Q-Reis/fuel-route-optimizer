@@ -4,6 +4,8 @@ Tests for core models and managers.
 Comprehensive test suite for base models, managers, and mixins.
 """
 
+from typing import Any
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.test import TestCase
@@ -23,7 +25,7 @@ User = get_user_model()
 class TestTimestampedModel(TimestampedModel):
     """Concrete model for testing TimestampedModel."""
 
-    name = models.CharField(max_length=100)
+    name: models.CharField = models.CharField(max_length=100)  # type: ignore[type-arg]
 
     class Meta:
         app_label = "core"
@@ -32,7 +34,7 @@ class TestTimestampedModel(TimestampedModel):
 class TestActivatableModel(ActivatableModel):
     """Concrete model for testing ActivatableModel."""
 
-    name = models.CharField(max_length=100)
+    name: models.CharField = models.CharField(max_length=100)  # type: ignore[type-arg]
 
     class Meta:
         app_label = "core"
@@ -41,7 +43,7 @@ class TestActivatableModel(ActivatableModel):
 class TestAuthorableModel(AuthorableModel):
     """Concrete model for testing AuthorableModel."""
 
-    name = models.CharField(max_length=100)
+    name: models.CharField = models.CharField(max_length=100)  # type: ignore[type-arg]
 
     class Meta:
         app_label = "core"
@@ -50,7 +52,7 @@ class TestAuthorableModel(AuthorableModel):
 class TestSluggedModel(SluggedModel):
     """Concrete model for testing SluggedModel."""
 
-    name = models.CharField(max_length=100)
+    name: models.CharField = models.CharField(max_length=100)  # type: ignore[type-arg]
 
     class Meta:
         app_label = "core"
@@ -59,17 +61,17 @@ class TestSluggedModel(SluggedModel):
 class BaseManagerTests(TestCase):
     """Tests for BaseManager functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         # Use ActivatableModel for testing manager since it uses BaseManager
         pass
 
-    def test_manager_methods_with_mock_data(self):
+    def test_manager_methods_with_mock_data(self) -> None:
         """Test manager methods with mocked data."""
         # Since we can't create actual model instances in tests without migrations,
         # we'll test the manager logic with mocks
 
-        manager = BaseManager()
+        manager: BaseManager[Any] = BaseManager()
 
         # Test that methods exist and are callable
         self.assertTrue(hasattr(manager, "active"))
@@ -83,7 +85,7 @@ class BaseManagerTests(TestCase):
 class TimestampedModelTests(TestCase):
     """Tests for TimestampedModel functionality."""
 
-    def test_model_fields_exist(self):
+    def test_model_fields_exist(self) -> None:
         """Test that TimestampedModel has the required fields."""
         from src.apps.core.models import TimestampedModel
 
@@ -92,13 +94,13 @@ class TimestampedModelTests(TestCase):
         self.assertIn("created_at", fields)
         self.assertIn("updated_at", fields)
 
-    def test_model_is_abstract(self):
+    def test_model_is_abstract(self) -> None:
         """Test that TimestampedModel is abstract."""
         from src.apps.core.models import TimestampedModel
 
         self.assertTrue(TimestampedModel._meta.abstract)
 
-    def test_default_ordering(self):
+    def test_default_ordering(self) -> None:
         """Test that default ordering is by created_at descending."""
         from src.apps.core.models import TimestampedModel
 
@@ -108,7 +110,7 @@ class TimestampedModelTests(TestCase):
 class ActivatableModelTests(TestCase):
     """Tests for ActivatableModel functionality."""
 
-    def test_model_fields_exist(self):
+    def test_model_fields_exist(self) -> None:
         """Test that ActivatableModel has the required fields."""
         from src.apps.core.models import ActivatableModel
 
@@ -118,25 +120,25 @@ class ActivatableModelTests(TestCase):
         self.assertIn("created_at", fields)  # Inherited from TimestampedModel
         self.assertIn("updated_at", fields)  # Inherited from TimestampedModel
 
-    def test_model_is_abstract(self):
+    def test_model_is_abstract(self) -> None:
         """Test that ActivatableModel is abstract."""
         from src.apps.core.models import ActivatableModel
 
         self.assertTrue(ActivatableModel._meta.abstract)
 
-    def test_has_base_manager(self):
+    def test_has_base_manager(self) -> None:
         """Test that ActivatableModel uses BaseManager."""
 
         self.assertIsInstance(TestActivatableModel.objects, BaseManager)
 
-    def test_soft_delete_method_exists(self):
+    def test_soft_delete_method_exists(self) -> None:
         """Test that soft_delete method exists."""
         from src.apps.core.models import ActivatableModel
 
         self.assertTrue(hasattr(ActivatableModel, "soft_delete"))
         self.assertTrue(callable(ActivatableModel.soft_delete))
 
-    def test_activate_method_exists(self):
+    def test_activate_method_exists(self) -> None:
         """Test that activate method exists."""
         from src.apps.core.models import ActivatableModel
 
@@ -147,7 +149,7 @@ class ActivatableModelTests(TestCase):
 class AuthorableModelTests(TestCase):
     """Tests for AuthorableModel functionality."""
 
-    def test_model_fields_exist(self):
+    def test_model_fields_exist(self) -> None:
         """Test that AuthorableModel has the required fields."""
         from src.apps.core.models import AuthorableModel
 
@@ -158,13 +160,13 @@ class AuthorableModelTests(TestCase):
         self.assertIn("created_at", fields)  # Inherited from TimestampedModel
         self.assertIn("updated_at", fields)  # Inherited from TimestampedModel
 
-    def test_model_is_abstract(self):
+    def test_model_is_abstract(self) -> None:
         """Test that AuthorableModel is abstract."""
         from src.apps.core.models import AuthorableModel
 
         self.assertTrue(AuthorableModel._meta.abstract)
 
-    def test_foreign_key_relationships(self):
+    def test_foreign_key_relationships(self) -> None:
         """Test that foreign key relationships are set up correctly."""
         created_by_field = TestAuthorableModel._meta.get_field("created_by")
         updated_by_field = TestAuthorableModel._meta.get_field("updated_by")
@@ -174,10 +176,10 @@ class AuthorableModelTests(TestCase):
         self.assertEqual(updated_by_field.related_model, User)
 
         # Check that they allow null
-        self.assertTrue(created_by_field.null)
-        self.assertTrue(updated_by_field.null)
+        self.assertTrue(getattr(created_by_field, "null", False))
+        self.assertTrue(getattr(updated_by_field, "null", False))
 
-    def test_save_method_override_exists(self):
+    def test_save_method_override_exists(self) -> None:
         """Test that save method is overridden."""
         from src.apps.core.models import AuthorableModel
 
@@ -189,7 +191,7 @@ class AuthorableModelTests(TestCase):
 class SluggedModelTests(TestCase):
     """Tests for SluggedModel functionality."""
 
-    def test_model_fields_exist(self):
+    def test_model_fields_exist(self) -> None:
         """Test that SluggedModel has the required fields."""
         from src.apps.core.models import SluggedModel
 
@@ -197,23 +199,23 @@ class SluggedModelTests(TestCase):
         fields = [f.name for f in SluggedModel._meta.get_fields()]
         self.assertIn("slug", fields)
 
-    def test_model_is_abstract(self):
+    def test_model_is_abstract(self) -> None:
         """Test that SluggedModel is abstract."""
         from src.apps.core.models import SluggedModel
 
         self.assertTrue(SluggedModel._meta.abstract)
 
-    def test_slug_field_properties(self):
+    def test_slug_field_properties(self) -> None:
         """Test that slug field has correct properties."""
         from src.apps.core.models import SluggedModel
 
         slug_field = SluggedModel._meta.get_field("slug")
 
         # Check field properties
-        self.assertEqual(slug_field.max_length, 100)
-        self.assertTrue(slug_field.unique)
+        self.assertEqual(getattr(slug_field, "max_length", 0), 100)
+        self.assertTrue(getattr(slug_field, "unique", False))
 
-    def test_save_method_override_exists(self):
+    def test_save_method_override_exists(self) -> None:
         """Test that save method is overridden for slug generation."""
         from src.apps.core.models import SluggedModel
 
@@ -225,13 +227,13 @@ class SluggedModelTests(TestCase):
 class ModelIntegrationTests(TestCase):
     """Integration tests for model functionality."""
 
-    def test_timestamped_model_ordering(self):
+    def test_timestamped_model_ordering(self) -> None:
         """Test that TimestampedModel has correct ordering."""
         from src.apps.core.models import TimestampedModel
 
         self.assertEqual(TimestampedModel._meta.ordering, ["-created_at"])
 
-    def test_inheritance_chain(self):
+    def test_inheritance_chain(self) -> None:
         """Test that model inheritance works correctly."""
         from src.apps.core.models import (
             ActivatableModel,
@@ -245,7 +247,7 @@ class ModelIntegrationTests(TestCase):
         # Test that AuthorableModel inherits from TimestampedModel
         self.assertTrue(issubclass(AuthorableModel, TimestampedModel))
 
-    def test_all_models_are_abstract(self):
+    def test_all_models_are_abstract(self) -> None:
         """Test that all base models are abstract."""
         from src.apps.core.models import (
             ActivatableModel,
@@ -267,7 +269,7 @@ class ModelIntegrationTests(TestCase):
                     model._meta.abstract, f"{model.__name__} should be abstract"
                 )
 
-    def test_field_help_texts_exist(self):
+    def test_field_help_texts_exist(self) -> None:
         """Test that important fields have help text."""
         from src.apps.core.models import (
             ActivatableModel,
@@ -280,29 +282,29 @@ class ModelIntegrationTests(TestCase):
         created_at_field = TimestampedModel._meta.get_field("created_at")
         updated_at_field = TimestampedModel._meta.get_field("updated_at")
 
-        self.assertTrue(created_at_field.help_text)
-        self.assertTrue(updated_at_field.help_text)
+        self.assertTrue(getattr(created_at_field, "help_text", ""))
+        self.assertTrue(getattr(updated_at_field, "help_text", ""))
 
         # Test ActivatableModel help text
         is_active_field = ActivatableModel._meta.get_field("is_active")
-        self.assertTrue(is_active_field.help_text)
+        self.assertTrue(getattr(is_active_field, "help_text", ""))
 
         # Test AuthorableModel help texts
         created_by_field = AuthorableModel._meta.get_field("created_by")
         updated_by_field = AuthorableModel._meta.get_field("updated_by")
 
-        self.assertTrue(created_by_field.help_text)
-        self.assertTrue(updated_by_field.help_text)
+        self.assertTrue(getattr(created_by_field, "help_text", ""))
+        self.assertTrue(getattr(updated_by_field, "help_text", ""))
 
         # Test SluggedModel help text
         slug_field = SluggedModel._meta.get_field("slug")
-        self.assertTrue(slug_field.help_text)
+        self.assertTrue(getattr(slug_field, "help_text", ""))
 
 
 class ModelBehaviorTests(TestCase):
     """Tests for the actual behavior of model methods."""
 
-    def test_soft_delete_and_activate(self):
+    def test_soft_delete_and_activate(self) -> None:
         """Test that soft_delete and activate methods work correctly."""
         instance = TestActivatableModel.objects.create(name="test_instance")
         self.assertTrue(instance.is_active)
@@ -315,7 +317,7 @@ class ModelBehaviorTests(TestCase):
         instance.refresh_from_db()
         self.assertTrue(instance.is_active)
 
-    def test_base_manager(self):
+    def test_base_manager(self) -> None:
         """Test that the BaseManager filters active/inactive objects correctly."""
         active_instance = TestActivatableModel.objects.create(
             name="active", is_active=True
@@ -330,12 +332,12 @@ class ModelBehaviorTests(TestCase):
         self.assertIn(inactive_instance, TestActivatableModel.objects.inactive())
         self.assertNotIn(active_instance, TestActivatableModel.objects.inactive())
 
-    def test_slug_generation_on_save(self):
+    def test_slug_generation_on_save(self) -> None:
         """Test that a slug is auto-generated from the name field on save."""
         instance = TestSluggedModel.objects.create(name="A Test Name")
         self.assertEqual(instance.slug, "a-test-name")
 
-    def test_unique_slug_generation(self):
+    def test_unique_slug_generation(self) -> None:
         """Test that a unique slug is generated if the original slug exists."""
         TestSluggedModel.objects.create(name="A Test Name", slug="a-test-name")
         new_instance = TestSluggedModel.objects.create(name="A Test Name")

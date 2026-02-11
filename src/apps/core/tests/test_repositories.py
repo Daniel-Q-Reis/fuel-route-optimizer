@@ -19,12 +19,12 @@ class TestPostRepository:
     Tests for the Post repository functions.
     """
 
-    def test_create_post_repository(self):
+    def test_create_post_repository(self) -> None:
         """
         Tests that the create_post repository function creates a Post in the database.
         """
         # Arrange
-        author = User.objects.create_user(
+        author = User.objects.create_user(  # type: ignore[attr-defined]
             username=fake.user_name(), password=fake.password()
         )
         title = fake.sentence()
@@ -39,12 +39,12 @@ class TestPostRepository:
         assert post.title == title
         assert post.author == author
 
-    def test_get_active_posts_repository(self):
+    def test_get_active_posts_repository(self) -> None:
         """
         Tests that the get_active_posts repository function returns only active posts.
         """
         # Arrange
-        author = User.objects.create_user(
+        author = User.objects.create_user(  # type: ignore[attr-defined]
             username=fake.user_name(), password=fake.password()
         )
         # Create active posts

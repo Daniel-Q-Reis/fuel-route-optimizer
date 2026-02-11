@@ -1,8 +1,8 @@
 # ADR 0004: Route Optimization Algorithm Choice
 
-**Status:** Accepted  
-**Date:** 2026-02-10  
-**Decision Makers:** Backend Team  
+**Status:** Accepted
+**Date:** 2026-02-10
+**Decision Makers:** Backend Team
 
 ## Context
 
@@ -66,12 +66,12 @@ def optimize_route(start, end):
     # Step 1: Get route geometry from ORS
     route = ors_api.directions(start, end)
     total_distance = route.distance_miles
-    
+
     # Step 2: Initialize
     current_position = start
     fuel_stops = []
     remaining_fuel_range = MAX_RANGE  # 500 miles
-    
+
     # Step 3: Iterate along route
     for segment in route.segments:
         # Check if we need fuel
@@ -80,29 +80,29 @@ def optimize_route(start, end):
             nearby_stations = FuelStation.objects.filter(
                 distance_from(current_position) <= remaining_fuel_range
             ).order_by('retail_price')  # Cheapest first
-            
+
             # Select the cheapest station that still allows
             # us to reach the next segment or destination
             best_station = None
             for station in nearby_stations:
                 distance_to_station = haversine(current_position, station)
                 distance_after_refuel = MAX_RANGE - distance_to_station
-                
+
                 if distance_after_refuel >= segment.distance:
                     best_station = station
                     break  # Greedy: pick first viable option
-            
+
             # Add fuel stop
             fuel_stops.append(best_station)
             current_position = best_station.location
             remaining_fuel_range = MAX_RANGE  # Full tank
-        
+
         # Continue along route
         remaining_fuel_range -= segment.distance
-    
+
     # Step 4: Calculate total cost
     total_cost = (total_distance / MPG) * avg_fuel_price
-    
+
     return {
         'route': route,
         'fuel_stops': fuel_stops,

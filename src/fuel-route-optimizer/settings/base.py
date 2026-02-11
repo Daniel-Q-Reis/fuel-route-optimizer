@@ -375,4 +375,3 @@ if SENTRY_DSN:
         environment=config("SENTRY_ENVIRONMENT", default="development"),
         release=VERSION,
     )
-

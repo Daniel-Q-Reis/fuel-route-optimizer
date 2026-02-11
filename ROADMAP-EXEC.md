@@ -117,7 +117,7 @@ class FuelStation(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, db_index=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['latitude', 'longitude'], name='idx_location'),
@@ -148,13 +148,13 @@ from fuel_stations.clients.openrouteservice import ORS_Client
 
 class Command(BaseCommand):
     help = "Load fuel stations from CSV and geocode addresses"
-    
+
     def handle(self, *args, **options):
         client = ORS_Client()
         with open('fuel-prices-for-be-assessment.csv', 'r') as f:
             reader = csv.DictReader(f)
             stations = list(reader)
-        
+
         for row in tqdm(stations, desc="Geocoding stations"):
             # Check if already exists (idempotency)
             if FuelStation.objects.filter(
@@ -162,7 +162,7 @@ class Command(BaseCommand):
                 city=row['City']
             ).exists():
                 continue
-            
+
             # Geocode address
             full_address = f"{row['Address']}, {row['City']}, {row['State']}"
             try:
@@ -178,7 +178,7 @@ class Command(BaseCommand):
                 )
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Failed to geocode: {full_address} - {e}"))
-            
+
             # Rate limiting: 200 requests/minute
             time.sleep(0.3)
 ```
@@ -312,7 +312,7 @@ Add method:
 def get_directions(self, start: str, end: str) -> dict:
     """
     Get route from ORS Directions API.
-    
+
     Returns:
     {
         'distance_miles': 380.5,
@@ -348,11 +348,11 @@ class RouteOptimizationService:
         self.ors_client = ORS_Client()
         # Use EFFECTIVE range (accounts for safety margin)
         self.max_range = settings.EFFECTIVE_RANGE_MILES
-    
+
     def optimize_route(self, start: str, end: str) -> Dict:
         """
         Find optimal fuel stops for a route.
-        
+
         Returns:
         {
             'route': {...},
@@ -366,45 +366,45 @@ class RouteOptimizationService:
         """
         # 1. Get route from ORS
         route = self.ors_client.get_directions(start, end)
-        
+
         # 2. Initialize
         current_position = route['geometry'][0]  # start
         remaining_range = self.max_range  # EFFECTIVE range (e.g., 470 if margin=0.06)
         fuel_stops = []
-        
+
         # 3. Iterate along route
         for i, point in enumerate(route['geometry']):
             # Calculate distance to next point
             segment_distance = haversine(...) if i > 0 else 0
-            
+
             # Check if we need fuel
             if remaining_range < segment_distance:
                 # Find nearby stations
                 station = self._find_best_station(
-                    current_position, 
-                    remaining_range, 
+                    current_position,
+                    remaining_range,
                     next_segment_distance
                 )
                 fuel_stops.append(station)
                 remaining_range = self.max_range  # Refuel to EFFECTIVE range
                 current_position = {'lat': station.latitude, 'lon': station.longitude}
-            
+
             remaining_range -= segment_distance
-        
+
         # 4. Calculate total cost
         total_cost = (route['distance_miles'] / MPG) * self._get_avg_fuel_price(fuel_stops)
-        
+
         return {
             'route': route,
             'fuel_stops': fuel_stops,
             'total_cost': total_cost,
             'total_distance_miles': route['distance_miles']
         }
-    
+
     def _find_best_station(self, position, max_distance, next_segment_distance):
         """Find cheapest station within range that allows reaching next segment."""
         bbox = get_bounding_box(position['lat'], position['lon'], max_distance)
-        
+
         # Query with bounding box + price ordering
         candidates = FuelStation.objects.filter(
             latitude__gte=bbox['lat_min'],
@@ -412,18 +412,18 @@ class RouteOptimizationService:
             longitude__gte=bbox['lon_min'],
             longitude__lte=bbox['lon_max']
         ).order_by('retail_price')[:50]  # Top 50 cheapest
-        
+
         # Refine with Haversine
         for station in candidates:
             distance_to_station = haversine(
-                position['lat'], position['lon'], 
+                position['lat'], position['lon'],
                 station.latitude, station.longitude
             )
             distance_after_refuel = self.max_range - distance_to_station  # Use EFFECTIVE range
-            
+
             if distance_after_refuel >= next_segment_distance:
                 return station
-        
+
         raise InsufficientStationsError("No viable station found")
 ```
 
@@ -496,7 +496,7 @@ class RouteOptimizationSerializer(serializers.Serializer):
         max_length=255,
         help_text="End location (address or 'lat,lon')"
     )
-    
+
     def validate(self, data):
         """Ensure start != end."""
         if data['start'] == data['end']:
@@ -534,7 +534,7 @@ from .services.route_optimizer import RouteOptimizationService
 
 class RouteOptimizationView(APIView):
     throttle_classes = [AnonRateThrottle]
-    
+
     @extend_schema(
         request=RouteOptimizationSerializer,
         responses={200: RouteOptimizationResponseSerializer},
@@ -543,17 +543,17 @@ class RouteOptimizationView(APIView):
     def post(self, request):
         serializer = RouteOptimizationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         try:
             service = RouteOptimizationService()
             result = service.optimize_route(
                 start=serializer.validated_data['start'],
                 end=serializer.validated_data['end']
             )
-            
+
             response_serializer = RouteOptimizationResponseSerializer(result)
             return Response(response_serializer.data, status=status.HTTP_200_OK)
-        
+
         except InsufficientStationsError as e:
             return Response(
                 {'error': str(e)},
@@ -619,7 +619,7 @@ class TestRouteOptimizationAPI:
         assert response.status_code == 200
         assert 'fuel_stops' in response.data
         assert response.data['total_cost'] > 0
-    
+
     def test_same_start_end_error(self):
         client = APIClient()
         response = client.post('/api/v1/optimize-route/', {
@@ -627,7 +627,7 @@ class TestRouteOptimizationAPI:
             'end': 'Los Angeles, CA'
         })
         assert response.status_code == 400
-    
+
     def test_throttling(self):
         client = APIClient()
         # Make 11 requests (limit is 10/min)
@@ -702,7 +702,7 @@ class TestEndToEnd:
             # Add more test stations along LA → SF route
             ...
         ])
-    
+
     def test_simple_route(self, mock_ors_directions):
         """Test LA → SF (should find 1-2 stops)."""
         client = APIClient()
@@ -713,12 +713,12 @@ class TestEndToEnd:
         assert response.status_code == 200
         assert len(response.data['fuel_stops']) <= 2
         assert response.data['total_distance_miles'] > 300
-    
+
     def test_long_route(self, mock_ors_directions):
         """Test LA → NYC (should find multiple stops)."""
         # Implement with mock data
         ...
-    
+
     def test_no_stations_in_range(self):
         """Test route with no nearby stations (should error)."""
         # Clear test data
@@ -736,7 +736,7 @@ File: `pytest.ini`
 [pytest]
 DJANGO_SETTINGS_MODULE = config.settings.test
 python_files = tests.py test_*.py *_tests.py
-addopts = 
+addopts =
     --cov=src/fuel_stations
     --cov-report=term-missing
     --cov-report=html

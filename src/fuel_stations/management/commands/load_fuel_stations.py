@@ -3,6 +3,7 @@
 import csv
 import time
 from pathlib import Path
+from typing import Any
 
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
@@ -30,7 +31,7 @@ class Command(BaseCommand):
 
     help = "Load fuel stations from CSV and geocode addresses"
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         """Execute the management command."""
         csv_path = Path("fuel-prices-for-be-assessment.csv")
 
@@ -43,14 +44,12 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Reading CSV file: {csv_path}"))
 
         # Read CSV file
-        with open(csv_path, "r", encoding="utf-8") as f:
+        with open(csv_path, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             stations = list(reader)
 
         total_stations = len(stations)
-        self.stdout.write(
-            self.style.SUCCESS(f"Found {total_stations} stations in CSV")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Found {total_stations} stations in CSV"))
 
         # Initialize OpenRouteService client
         client = ORSClient()
@@ -101,9 +100,7 @@ class Command(BaseCommand):
                 failed_count += 1
             except Exception as e:
                 self.stdout.write(
-                    self.style.ERROR(
-                        f"Unexpected error for {full_address}: {e}"
-                    )
+                    self.style.ERROR(f"Unexpected error for {full_address}: {e}")
                 )
                 failed_count += 1
 
@@ -115,12 +112,12 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("FUEL STATION LOADING COMPLETE"))
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(f"Total stations in CSV:  {total_stations}")
-        self.stdout.write(self.style.SUCCESS(f"Successfully created:   {created_count}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Successfully created:   {created_count}")
+        )
         self.stdout.write(
             self.style.WARNING(f"Skipped (already exist): {skipped_count}")
         )
         self.stdout.write(self.style.ERROR(f"Failed (geocoding):     {failed_count}"))
-        self.stdout.write(
-            f"Final database count:   {FuelStation.objects.count()}"
-        )
+        self.stdout.write(f"Final database count:   {FuelStation.objects.count()}")
         self.stdout.write(self.style.SUCCESS("=" * 60))

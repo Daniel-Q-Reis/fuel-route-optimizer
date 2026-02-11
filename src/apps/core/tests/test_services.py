@@ -2,6 +2,8 @@
 Unit tests for the core services.
 """
 
+from typing import Any
+
 import pytest
 from django.contrib.auth import get_user_model
 from faker import Faker
@@ -14,12 +16,12 @@ fake = Faker()
 
 
 @pytest.mark.django_db
-def test_create_post_service(mocker):
+def test_create_post_service(mocker: Any) -> None:
     """
     Tests that the create_post service correctly calls the repository and returns a Post.
     """
     # Arrange
-    author = User.objects.create_user(
+    author = User.objects.create_user(  # type: ignore[attr-defined]
         username=fake.user_name(), password=fake.password()
     )
     title = fake.sentence()

@@ -10,7 +10,7 @@ from fuel_stations.models import FuelStation
 class FuelStationModelTest(TestCase):
     """Test cases for the FuelStation model."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         self.station_data = {
             "truckstop_name": "Test Truck Stop",
@@ -22,7 +22,7 @@ class FuelStationModelTest(TestCase):
             "longitude": Decimal("-89.650148"),
         }
 
-    def test_create_fuel_station(self):
+    def test_create_fuel_station(self) -> None:
         """Test creating a fuel station."""
         station = FuelStation.objects.create(**self.station_data)
 
@@ -32,13 +32,13 @@ class FuelStationModelTest(TestCase):
         self.assertEqual(station.retail_price, Decimal("3.459"))
         self.assertIsNotNone(station.created_at)
 
-    def test_fuel_station_str_representation(self):
+    def test_fuel_station_str_representation(self) -> None:
         """Test string representation of fuel station."""
         station = FuelStation.objects.create(**self.station_data)
         expected_str = "Test Truck Stop - Springfield, IL"
         self.assertEqual(str(station), expected_str)
 
-    def test_fuel_station_indexes_exist(self):
+    def test_fuel_station_indexes_exist(self) -> None:
         """Test that database indexes are created."""
         # Get model meta
         indexes = [index.name for index in FuelStation._meta.indexes]
@@ -49,27 +49,27 @@ class FuelStationModelTest(TestCase):
         # Check for price index
         self.assertIn("idx_price", indexes)
 
-    def test_state_field_is_indexed(self):
+    def test_state_field_is_indexed(self) -> None:
         """Test that state field has db_index=True."""
         state_field = FuelStation._meta.get_field("state")
         self.assertTrue(state_field.db_index)
 
-    def test_retail_price_field_is_indexed(self):
+    def test_retail_price_field_is_indexed(self) -> None:
         """Test that retail_price field has db_index=True."""
         price_field = FuelStation._meta.get_field("retail_price")
         self.assertTrue(price_field.db_index)
 
-    def test_latitude_field_is_indexed(self):
+    def test_latitude_field_is_indexed(self) -> None:
         """Test that latitude field has db_index=True."""
         lat_field = FuelStation._meta.get_field("latitude")
         self.assertTrue(lat_field.db_index)
 
-    def test_longitude_field_is_indexed(self):
+    def test_longitude_field_is_indexed(self) -> None:
         """Test that longitude field has db_index=True."""
         lon_field = FuelStation._meta.get_field("longitude")
         self.assertTrue(lon_field.db_index)
 
-    def test_query_by_state(self):
+    def test_query_by_state(self) -> None:
         """Test filtering stations by state."""
         FuelStation.objects.create(**self.station_data)
 
@@ -84,7 +84,7 @@ class FuelStationModelTest(TestCase):
         self.assertEqual(il_stations.count(), 1)
         self.assertEqual(il_stations.first().city, "Springfield")
 
-    def test_query_by_price_range(self):
+    def test_query_by_price_range(self) -> None:
         """Test filtering stations by price range."""
         FuelStation.objects.create(**self.station_data)
 

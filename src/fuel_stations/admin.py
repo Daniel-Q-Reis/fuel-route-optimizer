@@ -6,7 +6,7 @@ from .models import FuelStation
 
 
 @admin.register(FuelStation)
-class FuelStationAdmin(admin.ModelAdmin):
+class FuelStationAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     """Admin interface for FuelStation model."""
 
     list_display = (

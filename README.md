@@ -9,11 +9,11 @@
 A Django-based REST API that optimizes fuel stops for long-distance routes in the USA. Features include vehicle range constraints, cost minimization using real-time fuel prices, and containerized deployment with Docker.
 
 > [!IMPORTANT]
-> **Critical Safety Findings Identified (ADR-003)**  
+> **Critical Safety Findings Identified (ADR-003)**
 > During requirements analysis, we identified **two safety-critical issues** not mentioned in the original specification:
 > 1. **Driver Fatigue Risk**: 500-mile segments require 8.3 hours continuous driving, violating US DOT regulations
 > 2. **Fuel Reserve Risk**: Operating at theoretical maximum range (500 miles) creates high risk of fuel depletion due to real-world conditions (traffic, weather, elevation)
-> 
+>
 > **Our Solution**: Implemented configurable `SAFETY_MARGIN_PERCENTAGE` (default 0% for assessment compliance, recommended 6% for production). See [ADR-003](docs/adr/0003-driver-safety-vs-range-optimization.md) for full analysis.
 
 
@@ -129,4 +129,3 @@ This will start the application served by Nginx, ready to handle production traf
 Licensed under the **MIT License**.
 
 ---
-

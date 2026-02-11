@@ -5,6 +5,7 @@ Comprehensive test suite for the senior-level health check implementation.
 """
 
 import json
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
@@ -16,12 +17,12 @@ from src.apps.core.health import HealthChecker
 class HealthCheckViewTests(TestCase):
     """Test suite for health check endpoints."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client and clear cache."""
         self.client = Client()
         cache.clear()
 
-    def test_health_check_success(self):
+    def test_health_check_success(self) -> None:
         """Test health check returns 200 when all components are healthy."""
         response = self.client.get("/health/")
 
@@ -45,13 +46,13 @@ class HealthCheckViewTests(TestCase):
         # Database should be healthy in tests
         self.assertEqual(checks["database"]["status"], "healthy")
 
-    def test_health_check_head_request(self):
+    def test_health_check_head_request(self) -> None:
         """Test health check supports HEAD requests for load balancers."""
         response = self.client.head("/health/")
         self.assertEqual(response.status_code, 200)
 
     @patch("src.apps.core.health.connection")
-    def test_health_check_database_failure(self, mock_connection):
+    def test_health_check_database_failure(self, mock_connection: Any) -> None:
         """Test health check returns 503 when database is down."""
         # Mock database connection failure
         mock_cursor = MagicMock()
@@ -66,7 +67,7 @@ class HealthCheckViewTests(TestCase):
         self.assertEqual(data["checks"]["database"]["status"], "unhealthy")
 
     @patch("src.apps.core.health.cache")
-    def test_health_check_cache_warning(self, mock_cache):
+    def test_health_check_cache_warning(self, mock_cache: Any) -> None:
         """Test health check handles cache failures gracefully."""
         # Mock cache failure
         mock_cache.set.side_effect = Exception("Redis connection failed")
@@ -78,7 +79,7 @@ class HealthCheckViewTests(TestCase):
         data = json.loads(response.content)
         self.assertEqual(data["checks"]["cache"]["status"], "degraded")
 
-    def test_health_check_caching(self):
+    def test_health_check_caching(self) -> None:
         """Test health check endpoint is never cached."""
         response1 = self.client.get("/health/")
         response2 = self.client.get("/health/")
@@ -91,7 +92,7 @@ class HealthCheckViewTests(TestCase):
         self.assertIn("Cache-Control", response1)
         self.assertIn("no-cache", response1["Cache-Control"])
 
-    def test_health_check_response_headers(self):
+    def test_health_check_response_headers(self) -> None:
         """Test health check includes proper response headers."""
         response = self.client.get("/health/")
 
@@ -99,7 +100,7 @@ class HealthCheckViewTests(TestCase):
         self.assertIn("Cache-Control", response)
         self.assertEqual(response["Content-Type"], "application/json")
 
-    def test_health_check_invalid_method(self):
+    def test_health_check_invalid_method(self) -> None:
         """Test health check only accepts GET and HEAD methods."""
         # POST should not be allowed
         response = self.client.post("/health/")
@@ -109,7 +110,7 @@ class HealthCheckViewTests(TestCase):
         response = self.client.put("/health/")
         self.assertEqual(response.status_code, 405)  # Method Not Allowed
 
-    def test_readiness_check_success(self):
+    def test_readiness_check_success(self) -> None:
         """Test readiness check returns 200 when ready."""
         response = self.client.get("/health/ready/")
 
@@ -119,7 +120,7 @@ class HealthCheckViewTests(TestCase):
         self.assertIn("timestamp", data)
 
     @patch("src.apps.core.health.connection")
-    def test_readiness_check_failure(self, mock_connection):
+    def test_readiness_check_failure(self, mock_connection: Any) -> None:
         """Test readiness check returns 503 when not ready."""
         # Mock database connection failure
         mock_cursor = MagicMock()
@@ -132,7 +133,7 @@ class HealthCheckViewTests(TestCase):
         data = json.loads(response.content)
         self.assertEqual(data["status"], "not_ready")
 
-    def test_liveness_check(self):
+    def test_liveness_check(self) -> None:
         """Test liveness check always returns 200."""
         response = self.client.get("/health/live/")
 
@@ -142,7 +143,7 @@ class HealthCheckViewTests(TestCase):
         self.assertIn("timestamp", data)
         self.assertIn("version", data)
 
-    def test_kubernetes_aliases(self):
+    def test_kubernetes_aliases(self) -> None:
         """Test Kubernetes-style health check aliases."""
         # Test /healthz
         response = self.client.get("/healthz/")
@@ -160,11 +161,11 @@ class HealthCheckViewTests(TestCase):
 class HealthCheckerUnitTests(TestCase):
     """Unit tests for the HealthChecker class."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.health_checker = HealthChecker()
 
-    def test_health_checker_initialization(self):
+    def test_health_checker_initialization(self) -> None:
         """Test HealthChecker initializes with all checks."""
         expected_checks = ["database", "cache", "disk_space", "memory"]
 
@@ -172,7 +173,7 @@ class HealthCheckerUnitTests(TestCase):
             self.assertIn(check, self.health_checker.checks)
 
     @patch("src.apps.core.health.connection")
-    def test_database_check_success(self, mock_connection):
+    def test_database_check_success(self, mock_connection: Any) -> None:
         """Test database check returns healthy status."""
         # Mock successful database connection
         mock_cursor = MagicMock()
@@ -185,7 +186,7 @@ class HealthCheckerUnitTests(TestCase):
         self.assertIn("timestamp", result)
 
     @patch("src.apps.core.health.connection")
-    def test_database_check_failure(self, mock_connection):
+    def test_database_check_failure(self, mock_connection: Any) -> None:
         """Test database check returns unhealthy status on failure."""
         # Mock database connection failure
         mock_cursor = MagicMock()
@@ -199,7 +200,7 @@ class HealthCheckerUnitTests(TestCase):
         self.assertIn("Connection failed", result["message"])
 
     @patch("src.apps.core.health.cache")
-    def test_cache_check_success(self, mock_cache):
+    def test_cache_check_success(self, mock_cache: Any) -> None:
         """Test cache check returns healthy status."""
         # Mock successful cache operations
         mock_cache.get.return_value = "ok"
@@ -210,7 +211,7 @@ class HealthCheckerUnitTests(TestCase):
         self.assertIn("response_time_ms", result)
 
     @patch("src.apps.core.health.cache")
-    def test_cache_check_failure(self, mock_cache):
+    def test_cache_check_failure(self, mock_cache: Any) -> None:
         """Test cache check returns unhealthy status on failure."""
         # Mock cache failure
         mock_cache.set.side_effect = Exception("Redis connection failed")
@@ -220,7 +221,7 @@ class HealthCheckerUnitTests(TestCase):
         self.assertIn("Redis connection failed", result["message"])
 
     @patch("src.apps.core.health.psutil")
-    def test_disk_check_healthy(self, mock_psutil):
+    def test_disk_check_healthy(self, mock_psutil: Any) -> None:
         """Test disk space check returns healthy status."""
         # Mock disk usage at 50%
         mock_disk = MagicMock()
@@ -236,7 +237,7 @@ class HealthCheckerUnitTests(TestCase):
         self.assertEqual(result["disk_usage_percent"], 50.0)
 
     @patch("src.apps.core.health.psutil")
-    def test_disk_check_unhealthy(self, mock_psutil):
+    def test_disk_check_unhealthy(self, mock_psutil: Any) -> None:
         """Test disk space check returns unhealthy status when full."""
         # Mock disk usage at 95%
         mock_disk = MagicMock()
@@ -250,7 +251,7 @@ class HealthCheckerUnitTests(TestCase):
         self.assertEqual(result["status"], "unhealthy")
         self.assertIn("Disk usage critical", result["message"])
 
-    def test_run_all_checks_integration(self):
+    def test_run_all_checks_integration(self) -> None:
         """Test running all health checks together."""
         result = self.health_checker.run_all_checks()
 

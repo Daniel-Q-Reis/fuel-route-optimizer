@@ -7,7 +7,7 @@ from rest_framework import serializers
 from .models import Post
 
 
-class HealthCheckSerializer(serializers.Serializer):
+class HealthCheckSerializer(serializers.Serializer):  # type: ignore[misc]
     """
     Serializer for the health check endpoint.
     """
@@ -17,7 +17,7 @@ class HealthCheckSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField(read_only=True)
 
 
-class PostSerializer(serializers.ModelSerializer):
+class PostSerializer(serializers.ModelSerializer):  # type: ignore[misc]
     """
     Serializer for the Post model.
 

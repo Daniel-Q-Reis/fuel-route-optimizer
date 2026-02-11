@@ -1,8 +1,8 @@
 # ADR 0005: Spatial Query Strategy (Haversine vs PostGIS)
 
-**Status:** Accepted  
-**Date:** 2026-02-10  
-**Decision Makers:** Backend Team  
+**Status:** Accepted
+**Date:** 2026-02-10
+**Decision Makers:** Backend Team
 
 ## Context
 
@@ -19,14 +19,14 @@ from math import radians, sin, cos, sqrt, atan2
 def haversine(lat1, lon1, lat2, lon2):
     """Calculate distance in miles between two lat/lon points."""
     R = 3959  # Earth radius in miles
-    
+
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     lat1, lat2 = radians(lat1), radians(lat2)
-    
+
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
     c = 2 * atan2(sqrt(a), sqrt(1-a))
-    
+
     return R * c
 ```
 
@@ -83,7 +83,7 @@ def get_bounding_box(lat, lon, radius_miles):
     """
     lat_delta = radius_miles / 69.0  # 1° lat ≈ 69 miles
     lon_delta = radius_miles / (69.0 * cos(radians(lat)))
-    
+
     return {
         'lat_min': lat - lat_delta,
         'lat_max': lat + lat_delta,
@@ -152,7 +152,7 @@ class FuelStation(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, db_index=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, db_index=True)
     retail_price = models.DecimalField(max_digits=5, decimal_places=2, db_index=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['latitude', 'longitude']),  # Composite index
@@ -164,7 +164,7 @@ class FuelStation(models.Model):
 ```python
 def find_nearby_stations(lat, lon, radius_miles):
     bbox = get_bounding_box(lat, lon, radius_miles)
-    
+
     # Fast bbox filter (uses indexes)
     candidates = FuelStation.objects.filter(
         latitude__gte=bbox['lat_min'],
@@ -172,14 +172,14 @@ def find_nearby_stations(lat, lon, radius_miles):
         longitude__gte=bbox['lon_min'],
         longitude__lte=bbox['lon_max']
     ).order_by('retail_price')
-    
+
     # Precise Haversine filter
     results = []
     for station in candidates:
         distance = haversine(lat, lon, station.latitude, station.longitude)
         if distance <= radius_miles:
             results.append({'station': station, 'distance': distance})
-    
+
     return results
 ```
 
