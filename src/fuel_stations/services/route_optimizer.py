@@ -42,7 +42,19 @@ class RouteOptimizationService:
         """
         Find optimal fuel stops to minimize cost while respecting range constraint.
         Includes Safety Insights for driver fatigue.
+        
+        **Performance:** Uses Redis caching (1-hour TTL) for repeated routes.
         """
+        from django.core.cache import cache
+        
+        # Generate cache key based on coordinates (rounded to 4 decimals for consistency)
+        cache_key = f"route_{start_lat:.4f}_{start_lon:.4f}_{end_lat:.4f}_{end_lon:.4f}"
+        
+        # Check cache first
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            return cached_result
+        
         # Step 1: Get route from ORS
         route = self.ors_client.get_directions(start_lat, start_lon, end_lat, end_lon)
         total_distance = route["distance_miles"]
@@ -51,7 +63,7 @@ class RouteOptimizationService:
         # Step 2: Check if we even need fuel stops
         if total_distance <= self.max_range:
             avg_price = self._get_average_fuel_price()
-            return {
+            result = {
                 "route": route,
                 "fuel_stops": [],
                 "safety_insights": self._generate_initial_safety_insights(
@@ -60,6 +72,9 @@ class RouteOptimizationService:
                 "total_cost": float((total_distance / self.mpg) * float(avg_price)),
                 "total_distance_miles": total_distance,
             }
+            # Cache for 1 hour
+            cache.set(cache_key, result, timeout=3600)
+            return result
 
         # Step 3: Find fuel stops using Geometry-Aware Greedy algorithm
         fuel_stops, safety_insights = self._find_fuel_stops_with_geometry(
@@ -74,13 +89,18 @@ class RouteOptimizationService:
 
         total_cost = (total_distance / self.mpg) * float(avg_price)
 
-        return {
+        result = {
             "route": route,
             "fuel_stops": fuel_stops,
             "safety_insights": safety_insights,
             "total_cost": total_cost,
             "total_distance_miles": total_distance,
         }
+        
+        # Cache for 1 hour
+        cache.set(cache_key, result, timeout=3600)
+        
+        return result
 
     def _find_fuel_stops_with_geometry(
         self,
@@ -93,12 +113,21 @@ class RouteOptimizationService:
         """
         Find fuel stops by walking the actual geometry for precise distance.
         Also identifies Safety Insights for segments > 4 hours.
+        
+        **Performance Optimization:** Skips first 200 miles (40% of range) since
+        fuel stops are mathematically impossible before that point. Preserves
+        safety insights (220-260mi recommendations) by not being too aggressive.
         """
         fuel_stops: list[dict[str, Any]] = []
         safety_insights: list[dict[str, Any]] = []
 
         current_lat, current_lon = start_lat, start_lon
-        current_geo_idx = 0
+        
+        # Optimization: Skip first 200 miles (Sieve-inspired algorithm)
+        # We calculate this using REAL geometry (not straight line) to maintain precision
+        SKIP_INITIAL_MILES = self.max_range * 0.4  # 200 miles for 500mi range
+        current_geo_idx = self._find_geometry_index_at_distance(geometry, SKIP_INITIAL_MILES)
+        
         total_distance_traveled = 0.0
 
         while current_geo_idx < len(geometry) - 1:
@@ -157,6 +186,45 @@ class RouteOptimizationService:
             )
 
         return fuel_stops, safety_insights
+
+    def _find_geometry_index_at_distance(
+        self, geometry: list[dict[str, float]], target_miles: float
+    ) -> int:
+        """
+        Find geometry index where accumulated distance >= target_miles.
+        Uses REAL road geometry (not straight line) for precision.
+        
+        This is the "Sieve" optimization - we skip ahead knowing that fuel stops
+        are impossible in the first 200 miles (40% of 500mi range).
+        
+        Args:
+            geometry: Route geometry points
+            target_miles: Distance to skip (e.g., 200 miles)
+            
+        Returns:
+            Index in geometry array where accumulated distance >= target_miles.
+            Returns 0 if route is shorter than target.
+            
+        Example:
+            >>> idx = self._find_geometry_index_at_distance(geometry, 200.0)
+            >>> # idx points to where we've traveled ~200 real miles along the road
+        """
+        accumulated_distance = 0.0
+        
+        for i in range(len(geometry) - 1):
+            # Calculate REAL distance along road between consecutive points
+            segment_distance = haversine(
+                geometry[i]["lat"],
+                geometry[i]["lon"],
+                geometry[i + 1]["lat"],
+                geometry[i + 1]["lon"],
+            )
+            accumulated_distance += segment_distance
+            
+            if accumulated_distance >= target_miles:
+                return i  # Found it! Start fuel stop search from here
+        
+        return 0  # Edge case: route shorter than target, start from beginning
 
     def _calculate_geometry_distance(
         self, geometry: list[dict[str, float]], start_idx: int
