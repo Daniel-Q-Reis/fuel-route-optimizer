@@ -38,5 +38,7 @@ urlpatterns = [
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     # API v1 routes (ready for your apps)
     # path("api/v1/", include("src.apps.your_app.urls")),
+    # Fuel route optimization API
+    path("", include("fuel_stations.urls")),
     # Add your apps' urls here
 ]
