@@ -169,3 +169,9 @@ wcwidth==0.2.13
     # via prompt-toolkit
 whitenoise[brotli]==6.9.0
     # via -r requirements.in
+django-silk==5.1.0
+    # via -r requirements.in
+tqdm==4.67.1
+    # via -r requirements.in
+geopy==2.4.1
+    # via -r requirements.in

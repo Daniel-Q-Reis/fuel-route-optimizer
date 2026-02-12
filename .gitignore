@@ -277,3 +277,4 @@ pyrightconfig.json
 GEMINI.md
 STATUS.md
 .geminiignore
+backup_fuel_stations.sql
