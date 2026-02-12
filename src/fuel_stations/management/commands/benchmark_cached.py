@@ -1,11 +1,11 @@
 """Performance benchmark with Redis caching."""
-import time
-from typing import Any, Dict, List
 
-import requests
+import time
+from typing import Any
+
+import requests  # type: ignore
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
-from tqdm import tqdm
 
 
 class Command(BaseCommand):
@@ -19,9 +19,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("⚡ CACHED PERFORMANCE BENCHMARK"))
         self.stdout.write("=" * 70 + "\n")
 
-        test_routes: List[Dict[str, Any]] = [
+        test_routes: list[dict[str, Any]] = [
             {
-                "name": "LA → Vegas", 
+                "name": "LA → Vegas",
                 "start_lat": 34.0522,
                 "start_lon": -118.2437,
                 "end_lat": 36.1699,
@@ -37,7 +37,7 @@ class Command(BaseCommand):
 
         # Test 1: Cache MISS (first request)
         self.stdout.write("\n📤 Test 1: Cache MISS (first request)")
-        times_miss: List[float] = []
+        times_miss: list[float] = []
         for _ in range(3):
             cache.clear()  # Force miss
             start = time.time()
@@ -48,7 +48,7 @@ class Command(BaseCommand):
 
         # Test 2: Cache HIT (repeated requests)
         self.stdout.write("\n💨 Test 2: Cache HIT (repeated requests)")
-        times_hit: List[float] = []
+        times_hit: list[float] = []
         for _ in range(10):  # 10 iterations
             start = time.time()
             response = requests.post(url, json=test_routes[0], timeout=30)
@@ -59,7 +59,7 @@ class Command(BaseCommand):
         # Results
         avg_miss = sum(times_miss) / len(times_miss) if times_miss else 0.0
         avg_hit = sum(times_hit) / len(times_hit) if times_hit else 0.0
-        
+
         if avg_miss > 0:
             improvement = ((avg_miss - avg_hit) / avg_miss) * 100
         else:
@@ -73,5 +73,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Improvement:          {improvement:>10.1f}%")
         self.stdout.write("=" * 70)
 
-        self.stdout.write(f"\n🎯 Cache reduced latency by {avg_miss - avg_hit:.1f}ms!\n")
+        self.stdout.write(
+            f"\n🎯 Cache reduced latency by {avg_miss - avg_hit:.1f}ms!\n"
+        )
         self.stdout.write(self.style.SUCCESS("✅ Cached benchmark complete!\n"))
