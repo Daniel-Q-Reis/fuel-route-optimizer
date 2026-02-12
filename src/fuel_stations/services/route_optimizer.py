@@ -322,7 +322,7 @@ class RouteOptimizationService:
                 f"We suggest a stop near {stop_city}, {stop_state} to respect safety guidelines. "
                 f"The cheapest station in this 220-260mi window is {abs(price_delta_pct):.1f}% "
                 f"{'more' if price_delta_pct > 0 else 'less'} expensive than the cost-optimal station "
-                f"found at {float(distance_to_optimal):.1f} miles."
+                f"('{optimal_station.truckstop_name}' at {float(distance_to_optimal):.1f} miles)."
             ),
             "safety_stop": {
                 "name": stop_name,
@@ -331,6 +331,12 @@ class RouteOptimizationService:
                 "distance_miles": float(
                     f"{float(haversine(current_lat, current_lon, stop_lat, stop_lon)):.1f}"
                 ),
+            },
+            "optimal_stop": {
+                "name": str(optimal_station.truckstop_name),
+                "city": str(optimal_station.city),
+                "price": float(optimal_station.retail_price),
+                "distance_miles": float(f"{distance_to_optimal:.1f}"),
             },
         }
 
