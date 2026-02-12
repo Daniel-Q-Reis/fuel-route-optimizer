@@ -236,3 +236,104 @@ class RouteOptimizationServiceTest(TestCase):
             self.assertIn("lon", stop)
             self.assertIn("price", stop)
             self.assertIn("distance_from_start", stop)
+
+    def test_find_closest_point_idx(self) -> None:
+        """Test finding the index of the closest geometry point."""
+        service = RouteOptimizationService()
+        geometry = [
+            (34.05, -118.25),  # Index 0
+            (35.05, -117.25),  # Index 1
+            (36.05, -116.25),  # Index 2
+        ]
+        
+        # Point close to index 1
+        idx = service._find_closest_point_idx(geometry, 35.06, -117.26)
+        self.assertEqual(idx, 1)
+
+    @patch("fuel_stations.services.route_optimizer.FuelStation.objects.filter")
+    def test_identify_safety_insight(self, mock_filter):
+        """Test safety insight generation for driver fatigue."""
+        service = RouteOptimizationService()
+        
+        # Test case: Distance < 220 miles (No insight)
+        insight = service._identify_safety_insight(0, 0, MagicMock(), 200.0)
+        self.assertIsNone(insight)
+        
+        # Test case: Distance > 220 miles (Should generate insight)
+        # Mock a safety stop candidate
+        mock_station = MagicMock()
+        mock_station.pk = 1
+        mock_station.retail_price = Decimal("3.50")
+        mock_station.latitude = 35.0
+        mock_station.longitude = -117.0
+        mock_station.truckstop_name = "Safety Stop"
+        mock_station.city = "Safety City"
+        mock_station.state = "CA"
+        
+        # Mock filter to return this station
+        mock_filter.return_value = [mock_station]
+        
+        # Mock optimal station (expensive)
+        optimal_station = MagicMock()
+        optimal_station.pk = 2
+        optimal_station.retail_price = Decimal("4.00")
+        
+        # We need to ensure haversine returns a distance between 220 and 260
+        # Since haversine is imported in the module, let's patch it or rely on geometry
+        # Ideally we patch haversine, but for simplicity let's assume the math works 
+        # given the coordinates. 
+        # Instead, let's patch haversine in the service module to control distance
+        with patch("fuel_stations.services.route_optimizer.haversine") as mock_haversine:
+            mock_haversine.return_value = 240.0 # Force distance to be in window
+            
+            insight = service._identify_safety_insight(
+                0, 0, optimal_station, 240.0
+            )
+            
+            self.assertIsNotNone(insight)
+            self.assertEqual(insight["type"], "DRIVER_FATIGUE_WARNING")
+            self.assertIn("Safety Stop", insight["safety_stop"]["name"])
+
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_full_fuel_stop_logic_coverage(self, mock_ors_client):
+        """Verify the loop in _find_fuel_stops_with_geometry is exercised."""
+        # Setup a route that definitely needs stops
+        mock_instance = MagicMock()
+        # Route logic: Start -> Stop -> End
+        # Use simple geometry: (0,0) -> (0,5) -> (0,10) (degrees)
+        # 1 degree lat is ~69 miles. So 5 deg is ~345 miles.
+        # Total distance ~690 miles. Max range 500.
+        # Should stop around (0,5).
+        
+        mock_instance.get_directions.return_value = {
+            "distance_miles": 700.0,
+            "duration_hours": 10.0,
+            "geometry": [
+                (34.0, -118.0), 
+                (38.0, -118.0), # ~276 miles north
+                (42.0, -118.0)  # ~552 miles (total)
+            ],
+        }
+        mock_ors_client.return_value = mock_instance
+        
+        # Ensure we have a station reachable
+        FuelStation.objects.create(
+            truckstop_name="Midway Station",
+            address="123 Mid Rd",
+            city="Mid City",
+            state="CA",
+            retail_price=Decimal("3.50"),
+            latitude=Decimal("38.0"),
+            longitude=Decimal("-118.0"),
+        )
+        
+        service = RouteOptimizationService()
+        # Mock geometry distance calculations to be predictable
+        # Or just trust the math with these clear coordinates
+        
+        # Run optimize
+        result = service.optimize_route(34.0, -118.0, 42.0, -118.0)
+        
+        # Check that we got a stop (exercising lines 86 and the loop)
+        self.assertTrue(len(result["fuel_stops"]) > 0)
+        self.assertIn("Midway Station", result["fuel_stops"][0]["name"])

@@ -57,9 +57,13 @@ class Command(BaseCommand):
                 times_hit.append(elapsed)
 
         # Results
-        avg_miss = sum(times_miss) / len(times_miss)
-        avg_hit = sum(times_hit) / len(times_hit)
-        improvement = ((avg_miss - avg_hit) / avg_miss) * 100
+        avg_miss = sum(times_miss) / len(times_miss) if times_miss else 0.0
+        avg_hit = sum(times_hit) / len(times_hit) if times_hit else 0.0
+        
+        if avg_miss > 0:
+            improvement = ((avg_miss - avg_hit) / avg_miss) * 100
+        else:
+            improvement = 0.0
 
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(self.style.SUCCESS("📊 RESULTS"))

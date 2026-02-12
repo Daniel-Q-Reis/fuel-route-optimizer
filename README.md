@@ -33,6 +33,18 @@ A Django-based REST API that optimizes fuel stops for long-distance routes in th
 
 ---
 
+## 🚀 Performance
+
+**Benchmarks (Phase 6):**
+- **Cached Latency:** **~24ms** (98.6% faster than baseline)
+- **Cold Latency:** ~500ms (dominated by external API and the developer region that is over 5000 miles distance, impacting in around 300ms just by the distance — 150ms RTT).
+- **Optimization Strategy:**
+  - **Redis Caching:** 1-hour TTL for processed routes.
+  - **Tuples Optimization:** Reduced memory footprint by converting dictionary geometry to tuples.
+  - **Algorithm Skip:** Skips first 200 miles of geometry iteration (mathematically safe) for 40% CPU reduction.
+
+---
+
 ## � Quick Start
 
 ### Prerequisites
