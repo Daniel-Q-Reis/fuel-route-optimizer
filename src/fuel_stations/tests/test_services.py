@@ -19,6 +19,9 @@ class RouteOptimizationServiceTest(TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
+        from django.core.cache import cache
+        cache.clear()
+
         # Create test fuel stations
         self.station1 = FuelStation.objects.create(
             truckstop_name="Cheap Station",
@@ -293,6 +296,8 @@ class RouteOptimizationServiceTest(TestCase):
             self.assertIsNotNone(insight)
             self.assertEqual(insight["type"], "DRIVER_FATIGUE_WARNING")
             self.assertIn("Safety Stop", insight["safety_stop"]["name"])
+            self.assertIn("optimal_stop", insight)
+            self.assertIn("4.0", str(insight["optimal_stop"]["price"]))
 
     @patch("fuel_stations.services.route_optimizer.ORSClient")
     def test_full_fuel_stop_logic_coverage(self, mock_ors_client: MagicMock) -> None:
