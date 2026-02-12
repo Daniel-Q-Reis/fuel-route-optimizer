@@ -1,8 +1,9 @@
 """Baseline performance benchmark management command."""
-import time
-from typing import Any, Dict, List
 
-import requests
+import time
+from typing import Any
+
+import requests  # type: ignore
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
@@ -15,10 +16,12 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         """Execute benchmark."""
         self.stdout.write("\n" + "=" * 70)
-        self.stdout.write(self.style.SUCCESS("🚀 BASELINE PERFORMANCE BENCHMARK - Public ORS API"))
+        self.stdout.write(
+            self.style.SUCCESS("🚀 BASELINE PERFORMANCE BENCHMARK - Public ORS API")
+        )
         self.stdout.write("=" * 70 + "\n")
 
-        test_routes: List[Dict[str, Any]] = [
+        test_routes: list[dict[str, Any]] = [
             {
                 "name": "LA → Las Vegas (~270 miles)",
                 "start_lat": 34.0522,
@@ -43,7 +46,7 @@ class Command(BaseCommand):
         ]
 
         url = "http://localhost:8000/api/v1/optimize-route/"
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
 
         # Warmup
         self.stdout.write("🔥 Warmup request...")
@@ -51,7 +54,7 @@ class Command(BaseCommand):
 
         # Benchmarks
         for route in tqdm(test_routes, desc="Running benchmarks"):
-            times: List[float] = []
+            times: list[float] = []
 
             for _ in range(3):  # 3 iterations
                 start = time.time()
@@ -64,18 +67,22 @@ class Command(BaseCommand):
                     self.stdout.write(f"❌ Error: {response.status_code}")
 
             if times:
-                results.append({
-                    "route": route["name"],
-                    "avg": sum(times) / len(times),
-                    "min": min(times),
-                    "max": max(times),
-                })
+                results.append(
+                    {
+                        "route": route["name"],
+                        "avg": sum(times) / len(times),
+                        "min": min(times),
+                        "max": max(times),
+                    }
+                )
 
         # Display
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(self.style.SUCCESS("📊 RESULTS"))
         self.stdout.write("=" * 70)
-        self.stdout.write(f"{'Route':<35} {'Avg (ms)':<12} {'Min (ms)':<12} {'Max (ms)':<12}")
+        self.stdout.write(
+            f"{'Route':<35} {'Avg (ms)':<12} {'Min (ms)':<12} {'Max (ms)':<12}"
+        )
         self.stdout.write("-" * 70)
 
         total_avg = 0.0
