@@ -24,14 +24,23 @@ We identified critical real-world constraints and implemented solutions that go 
 - **Result:** Reduces API calls by **81%** while retaining 99% of the economically relevant stations for a cost-minimization algorithm.
 - **Reference:** [ADR-007: Geographic Data Ingestion](docs/adr/0007-geographic-data-ingestion-strategy.md)
 
-### 3. Algorithm Performance (Sieve Optimization)
-**The Problem:** Iterating through thousands of geometry points for valid fuel stops is CPU-intensive ($O(N \times M)$), causing 2-3s latency for cross-country routes.
+### 3. Algorithm Performance (Sieve & Data Structures)
+**The Problem:** Iterating through thousands of geometry points is CPU-intensive ($O(N \times M)$).
 **The Solution:**
-- **Sieve Optimization:** Mathematically proves no stop is needed in the first 40% of the range (200 miles). We skip geometry processing for this segment.
-- **Impact:** **79.9% faster** response time for uncached requests (2397ms → 481ms).
+- **Sieve Optimization:** Mathematically proves no stop is needed in the first 40% of the range. We skip processing for this segment.
+  - **Impact:** **79.9% faster** response time (2397ms → 481ms).
 - **Redis Caching:** Route calculations are cached for 1 hour.
-- **Impact:** **99% faster** response time for repeated routes (**~28ms** latency).
-- **Reference:** [Performance Benchmarks](docs/performance/optimization_results.md)
+  - **Impact:** **99% faster** response time for repeated routes (**~28ms** latency).
+- **Tuple vs Dict Optimization:** Switched geometry storage from Dictionaries to Tuples to reduce memory overhead and serialization cost.
+  - **Impact:** **11.5% reduction** in processing time (28ms → 24ms for hot cache). A 13% efficiency gain.
+
+
+### 4. Failed Experiment: Async Parallelism
+**Hypothesis:** Using `concurrent.futures` with 3 workers would speed up station searches.
+**Result:** **77% Slower** (46ms → 81ms).
+**Analysis:** The overhead of Python's GIL and thread context switching outweighed the benefits for this specific I/O pattern.
+**Decision:** We discarded the async implementation in favor of the optimized synchronous approach, proving we make **data-driven decisions** rather than just following trends.
+**Reference:** [Performance Benchmarks](docs/performance/optimization_results.md)
 
 ---
 
