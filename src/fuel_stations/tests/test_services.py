@@ -101,7 +101,12 @@ class RouteOptimizationServiceTest(TestCase):
         self.assertEqual(result["total_distance_miles"], 800.0)
         self.assertIn("total_cost", result)
         self.assertIn("route", result)
+        self.assertEqual(result["total_distance_miles"], 800.0)
+        self.assertIn("total_cost", result)
+        self.assertIn("route", result)
         self.assertIn("fuel_stops", result)
+        self.assertIn("average_gallon_price", result)
+        self.assertIsInstance(result["average_gallon_price"], float)
 
     @patch("fuel_stations.services.route_optimizer.ORSClient")
     def test_optimize_route_no_stations_in_range(
@@ -211,6 +216,40 @@ class RouteOptimizationServiceTest(TestCase):
         avg_price = service._get_average_fuel_price()
 
         self.assertEqual(avg_price, Decimal("3.50"))
+
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_fuel_stops_names_are_cleaned(
+        self, mock_ors_client: MagicMock
+    ) -> None:
+        """Test that fuel stop names are cleaned of # suffixes."""
+        mock_instance = MagicMock()
+        mock_instance.get_directions.return_value = {
+            "distance_miles": 600.0,
+            "duration_hours": 9.0,
+            "geometry": [
+                (39.7817, -89.6501),
+                (38.6270, -90.1994),
+            ],
+        }
+        mock_ors_client.return_value = mock_instance
+
+        # Create station with messy name
+        FuelStation.objects.create(
+            truckstop_name="Messy Name #1234",
+            address="123 Rd",
+            city="City",
+            state="ST",
+            retail_price=Decimal("3.50"),
+            latitude=Decimal("39.0"),
+            longitude=Decimal("-90.0"),
+        )
+
+        service = RouteOptimizationService()
+        result = service.optimize_route(39.7817, -89.6501, 38.6270, -90.1994)
+
+        if result["fuel_stops"]:
+            stop = result["fuel_stops"][0]
+            self.assertEqual(stop["name"], "Messy Name")
 
     @patch("fuel_stations.services.route_optimizer.ORSClient")
     def test_fuel_stops_include_station_details(
