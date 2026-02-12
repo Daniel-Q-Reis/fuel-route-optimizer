@@ -26,8 +26,8 @@ def load_benchmark_data() -> None:
         return
 
     # Load ALL states to ensure no geographic gaps (Global Strategy)
-    # Strategy: Top 14 cheapest stations per state (Sweet spot)
-    # ~50 states * 14 = ~700 requests (well within 2000/day limit)
+    # Strategy: Top 30 cheapest stations per state (Enhanced density)
+    # ~50 states * 30 = ~1500 requests (well within 2000/day limit)
     stations_by_state: dict[str, list[dict[str, str]]] = {}
 
     print("Reading CSV...")
@@ -39,14 +39,14 @@ def load_benchmark_data() -> None:
                 stations_by_state[state] = []
             stations_by_state[state].append(row)
 
-    # Sort by price and take top 14 cheapest per state (Greedy Cost-Optimal Sampling)
+    # Sort by price and take top 30 cheapest per state (Greedy Cost-Optimal Sampling)
     to_geocode = []
     for _, stations in stations_by_state.items():
-        sorted_stations = sorted(stations, key=lambda x: float(x["Retail Price"]))[:14]
+        sorted_stations = sorted(stations, key=lambda x: float(x["Retail Price"]))[:30]
         to_geocode.extend(sorted_stations)
 
     print(
-        f"Found {len(to_geocode)} target stations (Top 14 cheapest per state, Global)."
+        f"Found {len(to_geocode)} target stations (Top 30 cheapest per state, Global)."
     )
 
     client = ORSClient()
@@ -60,6 +60,8 @@ def load_benchmark_data() -> None:
         address = row["Address"]
         retail_price = float(row["Retail Price"])
 
+        # PREVENTIVE MECHANISM: Check local DB before calling API.
+        # This ensuring skipped data DOES NOT consume API requests.
         if FuelStation.objects.filter(
             truckstop_name=truckstop_name, city=city, state=state
         ).exists():
@@ -84,6 +86,12 @@ def load_benchmark_data() -> None:
             time.sleep(2.0)  # Rate limit: 40 req/min = 1.5s/req. Safe margin: 2.0s
         except Exception as e:
             print(f"Failed to geocode {full_address}: {e}")
+            
+            # AUTOMATIC BREAK: Stop if API limit (403) or Rate limit (429) hit
+            error_str = str(e).lower()
+            if "403" in error_str or "forbidden" in error_str or "429" in error_str:
+                print("\n🛑 STOPPING: API Quota exhausted or Rate Limit hit. Please check your ORS Key.")
+                break
 
     print(f"\n✅ Load complete! Added {count} stations. Skipped {skipped} existing.")
 
