@@ -13,8 +13,11 @@ from typing import Any, Dict, List
 import django
 
 # Setup Django
+# Setup Django
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, "src"))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fuel-route-optimizer.settings.development")
-sys.path.insert(0, "/usr/src/app/src")
 django.setup()
 
 import requests
@@ -72,6 +75,7 @@ def run_benchmark() -> None:
                 times.append(elapsed)
             else:
                 print(f"\n❌ Error for {route['name']}: {response.status_code}")
+                print(f"Response: {response.text[:2000]}")  # Print error details
                 continue
 
         if times:
