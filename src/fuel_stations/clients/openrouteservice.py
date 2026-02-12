@@ -144,7 +144,8 @@ class ORSClient:
 
         # Extract geometry coordinates
         geometry_raw = feature["geometry"]["coordinates"]
-        geometry = [{"lat": coord[1], "lon": coord[0]} for coord in geometry_raw]
+        # Convert [lon, lat] to (lat, lon) tuples for memory efficiency
+        geometry = [(coord[1], coord[0]) for coord in geometry_raw]
 
         return {
             "distance_miles": distance_miles,

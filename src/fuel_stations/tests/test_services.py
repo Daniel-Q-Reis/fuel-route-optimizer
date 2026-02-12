@@ -61,8 +61,8 @@ class RouteOptimizationServiceTest(TestCase):
             "distance_miles": 250.0,
             "duration_hours": 4.0,
             "geometry": [
-                {"lat": 34.05, "lon": -118.25},
-                {"lat": 36.17, "lon": -115.14},
+                (34.05, -118.25),  # (lat, lon) tuples
+                (36.17, -115.14),
             ],
         }
         mock_ors_client.return_value = mock_instance
@@ -84,8 +84,8 @@ class RouteOptimizationServiceTest(TestCase):
             "distance_miles": 800.0,
             "duration_hours": 12.0,
             "geometry": [
-                {"lat": 39.7817, "lon": -89.6501},
-                {"lat": 39.0997, "lon": -94.5786},
+                (39.7817, -89.6501),  # (lat, lon)
+                (39.0997, -94.5786),
             ],
         }
         mock_ors_client.return_value = mock_instance
@@ -112,8 +112,8 @@ class RouteOptimizationServiceTest(TestCase):
             "distance_miles": 1500.0,
             "duration_hours": 20.0,
             "geometry": [
-                {"lat": 34.05, "lon": -118.25},
-                {"lat": 40.71, "lon": -74.01},
+                (34.05, -118.25),
+                (40.71, -74.01),
             ],
         }
         mock_ors_client.return_value = mock_instance
@@ -219,8 +219,8 @@ class RouteOptimizationServiceTest(TestCase):
             "distance_miles": 600.0,
             "duration_hours": 9.0,
             "geometry": [
-                {"lat": 39.7817, "lon": -89.6501},
-                {"lat": 38.6270, "lon": -90.1994},
+                (39.7817, -89.6501),
+                (38.6270, -90.1994),
             ],
         }
         mock_ors_client.return_value = mock_instance

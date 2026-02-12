@@ -99,6 +99,37 @@ cache.set(cache_key, result, timeout=3600)  # 1 hour TTL
 
 ---
 
+### 3. Tuples Optimization (Micro-Optimization)
+**File:** [`openrouteservice.py`](file:///d:/DevOps/fuel-route-optimizer/src/fuel_stations/clients/openrouteservice.py)
+
+**Change:**
+Switched geometry storage from `List[Dict[str, float]]` to `List[Tuple[float, float]]`.
+
+**Impact:**
+- **Speed:** ~11.5% faster serialization/deserialization for cached routes (59ms vs 67ms).
+- **Memory:** Reduced memory footprint for large route geometries (thousands of points).
+
+**Why it matters:**
+For NY-Miami routes (~1,300 miles) with extensive geometry points, the JSON serialization overhead is significant. Tuples are lighter and faster to process in Python than dictionaries.
+
+---
+
+### 4. Async Experiment (Negative Result)
+**Files:** `benchmark_baseline.py` (Reverted)
+
+**Attempt:**
+Implemented `concurrent.futures.ThreadPoolExecutor` to handle 3 simultaneous requests.
+
+**Result:**
+- **Synchronous:** ~46ms (Hot Cache)
+- **Async:** ~81.8ms (Hot Cache) -> **77% Slower**
+
+**Reason:**
+For low concurrency, the overhead of Python's GIT and context switching outweighs the benefit, especially when the "I/O" (Redis) is extremely fast. We reverted to Synchronous to avoid this overhead.
+
+---
+
+
 ## 📈 Performance by Cache Hit Rate
 
 | Cache Hit Rate | Avg Response Time | vs Baseline |

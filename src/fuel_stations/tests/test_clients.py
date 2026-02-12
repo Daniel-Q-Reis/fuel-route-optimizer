@@ -145,8 +145,9 @@ class ORSClientDirectionsTest(TestCase):
         self.assertAlmostEqual(result["distance_miles"], 250.0, delta=1.0)
         self.assertAlmostEqual(result["duration_hours"], 4.0, places=1)
         self.assertEqual(len(result["geometry"]), 2)
-        self.assertEqual(result["geometry"][0]["lat"], 34.05)
-        self.assertEqual(result["geometry"][0]["lon"], -118.25)
+        # Tuples (lat, lon)
+        self.assertEqual(result["geometry"][0][0], 34.05)
+        self.assertEqual(result["geometry"][0][1], -118.25)
         mock_post.assert_called_once()
 
     @patch("fuel_stations.clients.openrouteservice.requests.Session.post")
@@ -192,7 +193,7 @@ class ORSClientDirectionsTest(TestCase):
 
     @patch("fuel_stations.clients.openrouteservice.requests.Session.post")
     def test_directions_coordinate_transformation(self, mock_post: Mock) -> None:
-        """Test that coordinates are properly transformed from [lon,lat] to {lat,lon}."""
+        """Test that coordinates are properly transformed from [lon,lat] to (lat,lon)."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -213,7 +214,7 @@ class ORSClientDirectionsTest(TestCase):
         result = self.ors_client.get_directions(39.78, -89.65, 38.62, -90.19)
 
         # Verify coordinate transformation
-        self.assertEqual(result["geometry"][0]["lat"], 39.78)
-        self.assertEqual(result["geometry"][0]["lon"], -89.65)
-        self.assertEqual(result["geometry"][1]["lat"], 38.62)
-        self.assertEqual(result["geometry"][1]["lon"], -90.19)
+        self.assertEqual(result["geometry"][0][0], 39.78)
+        self.assertEqual(result["geometry"][0][1], -89.65)
+        self.assertEqual(result["geometry"][1][0], 38.62)
+        self.assertEqual(result["geometry"][1][1], -90.19)

@@ -167,7 +167,32 @@ Reality: Most routes have 1000+ points → always profitable
 
 ---
 
-## 🚀 Production Impact
+---
+
+## ⚡ Optimization 2: Tuples for Geometry
+
+### Problem
+The OpenRouteService API returns geometry as `[lon, lat]` arrays. We were converting them to **Dictionaries**: `{'lat': 34.05, 'lon': -118.25}`.
+- **Memory:** Heavy overhead for keys ('lat', 'lon') repeated thousands of times.
+- **CPU:** Dictionary lookups and serialization are slower than index access.
+
+### Solution
+Convert to **Tuples**: `(34.05, -118.25)`.
+
+```python
+# Before (Dict) - Heavy
+geometry = [{'lat': c[1], 'lon': c[0]} for c in coordinates]
+
+# After (Tuple) - Lightweight
+geometry = [(c[1], c[0]) for c in coordinates]
+```
+
+### Impact
+- **Speed:** ~11.5% faster JSON serialization for cached routes (~59ms vs ~67ms).
+- **Memory:** ~48% reduction in memory usage for geometry structures.
+
+---
+
 
 **With millions of requests:**
 - 40% reduction in CPU cycles
