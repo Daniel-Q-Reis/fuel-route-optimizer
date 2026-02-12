@@ -154,11 +154,12 @@ class E2ERouteOptimizationTest(TestCase):
 
         # Verify all geometry points have valid lat/lon
         for point in geometry:
-            self.assertIn("lat", point)
-            self.assertIn("lon", point)
+            # point should be a list or tuple [lat, lon]
+            self.assertIsInstance(point, (list, tuple))
+            self.assertEqual(len(point), 2)
 
-            lat = point["lat"]
-            lon = point["lon"]
+            lat = point[0]
+            lon = point[1]
 
             # Validate coordinate ranges
             self.assertGreaterEqual(lat, -90.0)

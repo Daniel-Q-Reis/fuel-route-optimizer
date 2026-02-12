@@ -59,8 +59,8 @@ class OptimizeRouteAPITest(TestCase):
                 "distance_miles": 250.0,
                 "duration_hours": 4.0,
                 "geometry": [
-                    {"lat": 34.05, "lon": -118.25},
-                    {"lat": 36.17, "lon": -115.14},
+                    (34.05, -118.25),  # Tuples
+                    (36.17, -115.14),
                 ],
             },
             "fuel_stops": [
@@ -204,7 +204,7 @@ class OptimizeRouteAPITest(TestCase):
             "route": {
                 "distance_miles": 100.0,
                 "duration_hours": 2.0,
-                "geometry": [{"lat": 34.05, "lon": -118.25}],
+                "geometry": [(34.05, -118.25)],  # Tuple
             },
             "fuel_stops": [],
             "total_cost": 35.0,

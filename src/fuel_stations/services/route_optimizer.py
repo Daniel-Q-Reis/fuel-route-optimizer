@@ -108,7 +108,7 @@ class RouteOptimizationService:
         start_lon: float,
         end_lat: float,
         end_lon: float,
-        geometry: list[dict[str, float]],
+        geometry: list[tuple[float, float]],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """
         Find fuel stops by walking the actual geometry for precise distance.
@@ -188,7 +188,7 @@ class RouteOptimizationService:
         return fuel_stops, safety_insights
 
     def _find_geometry_index_at_distance(
-        self, geometry: list[dict[str, float]], target_miles: float
+        self, geometry: list[tuple[float, float]], target_miles: float
     ) -> int:
         """
         Find geometry index where accumulated distance >= target_miles.
@@ -198,7 +198,7 @@ class RouteOptimizationService:
         are impossible in the first 200 miles (40% of 500mi range).
         
         Args:
-            geometry: Route geometry points
+            geometry: Route geometry points as (lat, lon) tuples
             target_miles: Distance to skip (e.g., 200 miles)
             
         Returns:
@@ -214,10 +214,10 @@ class RouteOptimizationService:
         for i in range(len(geometry) - 1):
             # Calculate REAL distance along road between consecutive points
             segment_distance = haversine(
-                geometry[i]["lat"],
-                geometry[i]["lon"],
-                geometry[i + 1]["lat"],
-                geometry[i + 1]["lon"],
+                geometry[i][0],
+                geometry[i][1],
+                geometry[i + 1][0],
+                geometry[i + 1][1],
             )
             accumulated_distance += segment_distance
             
@@ -227,27 +227,27 @@ class RouteOptimizationService:
         return 0  # Edge case: route shorter than target, start from beginning
 
     def _calculate_geometry_distance(
-        self, geometry: list[dict[str, float]], start_idx: int
+        self, geometry: list[tuple[float, float]], start_idx: int
     ) -> float:
         """Sum exact road distance from a point in geometry to the end."""
         total = 0.0
         for i in range(start_idx, len(geometry) - 1):
             total += haversine(
-                geometry[i]["lat"],
-                geometry[i]["lon"],
-                geometry[i + 1]["lat"],
-                geometry[i + 1]["lon"],
+                geometry[i][0],
+                geometry[i][1],
+                geometry[i + 1][0],
+                geometry[i + 1][1],
             )
         return total
 
     def _find_closest_point_idx(
-        self, geometry: list[dict[str, float]], lat: float, lon: float
+        self, geometry: list[tuple[float, float]], lat: float, lon: float
     ) -> int:
         """Find the index of the geometry point closest to given coordinates."""
         min_dist = float("inf")
         closest_idx = 0
         for i, point in enumerate(geometry):
-            dist = haversine(lat, lon, point["lat"], point["lon"])
+            dist = haversine(lat, lon, point[0], point[1])
             if dist < min_dist:
                 min_dist = dist
                 closest_idx = i
