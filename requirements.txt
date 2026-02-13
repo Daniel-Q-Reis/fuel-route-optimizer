@@ -175,3 +175,4 @@ tqdm==4.67.1
     # via -r requirements.in
 geopy==2.4.1
     # via -r requirements.in
+django-silk
