@@ -48,11 +48,11 @@ We identified critical real-world constraints and implemented solutions that go 
 
 We benchmarked the system under rigorous conditions (Docker + Postgres 16).
 
-| Metric | Baseline (No Opt) | With Sieve Opt | With Redis Cache | Total Speedup |
-| :--- | :--- | :--- | :--- | :--- |
-| **LA → Vegas** | 2,745ms | 33ms | 24ms | **114x** |
-| **Chicago → Houston** | 2,049ms | 929ms | 55ms | **37x** |
-| **Average Latency** | **2,397ms** | **481ms** | **28ms** | **85x** |
+| Metric | Baseline (No Opt) | With Sieve Opt | With Redis Cache | With Redis Cache + tuple | Total Speedup |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **LA → Vegas** | 2,745ms | 1,696ms | 129ms | 114ms | **24x** |
+| **Chicago → Houston** | 2,049ms | 1481ms | 62ms | 55ms | **37x** |
+| **Average Latency** | **2,397ms** | **1588ms** | **96ms** | **84ms** | **29x** |
 
 > **"The Sieve Approach":** By implementing a geometry-aware skip logic (looping only from mile 200+), we reduced complexity by 40% without sacrificing the 100% precision required for safety calculations.
 
