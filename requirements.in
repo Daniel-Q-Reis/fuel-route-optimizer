@@ -28,7 +28,6 @@ psutil
 python-json-logger
 
 # Performance & Benchmarking
-django-silk
+django-silk==5.2.0
 tqdm
 geopy
-django-silk
