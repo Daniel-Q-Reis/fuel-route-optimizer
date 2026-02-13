@@ -238,6 +238,33 @@ docker-compose exec web ruff format --check .
 
 ---
 
+## 🏎️ Benchmarking & Verification
+
+### 1. Run Performance Benchmark
+We provided a script to benchmark the geocoding and data ingestion process. This script loads a dataset of fuel prices and measures the throughput.
+
+```bash
+# Enter the container shell
+make shell
+
+# Run the benchmark script
+python scripts/load_benchmark_data.py
+```
+*Tip: Watch the logs to see the "Sieve" optimization in action skipping irrelevant stations.*
+
+### 2. Postman Collection
+A complete Postman collection is included in the root directory: `fuel_route_optimizer.postman_collection.json`.
+
+**How to use:**
+1. Open Postman.
+2. Click **Import** -> **File** -> Select `fuel_route_optimizer.postman_collection.json`.
+3. You will see 4 pre-configured requests:
+    - **Long Trip (NY -> LA):** Full demonstration of fuel stops & cost logic.
+    - **Medium Trip (Dallas -> Chicago):** Classic multi-state route.
+    - **Short Trip (Charlotte -> Atlanta):** Demonstrates **Sieve Optimization** (skips fuel search) + **Safety Insight**.
+
+---
+
 ## 🗂️ Project Structure
 
 ```
