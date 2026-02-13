@@ -63,14 +63,17 @@ class RouteOptimizationService:
         # Step 2: Check if we even need fuel stops
         if total_distance <= self.max_range:
             avg_price = self._get_average_fuel_price()
+            total_cost_val = (total_distance / self.mpg) * float(avg_price)
+            
             result = {
                 "route": route,
                 "fuel_stops": [],
                 "safety_insights": self._generate_initial_safety_insights(
                     total_distance
                 ),
-                "total_cost": float((total_distance / self.mpg) * float(avg_price)),
-                "total_distance_miles": total_distance,
+                "total_cost": round(total_cost_val, 2),
+                "total_distance_miles": round(total_distance, 2),
+                "average_gallon_price": round(float(avg_price), 2),
             }
             # Cache for 1 hour
             cache.set(cache_key, result, timeout=3600)
