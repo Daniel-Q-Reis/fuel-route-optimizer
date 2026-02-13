@@ -31,3 +31,4 @@ python-json-logger
 django-silk
 tqdm
 geopy
+django-silk
