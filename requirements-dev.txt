@@ -355,3 +355,4 @@ whitenoise[brotli]==6.11.0
 # The following packages are considered to be unsafe in a requirements file:
 # pip
 # setuptools
+django-silk==5.2.0
