@@ -279,7 +279,8 @@ class RouteOptimizationServiceTest(TestCase):
             self.assertIn("price", stop)
             self.assertIn("distance_from_start", stop)
 
-    def test_find_closest_point_idx(self) -> None:
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
+    def test_find_closest_point_idx(self, mock_ors_client: MagicMock) -> None:
         """Test finding the index of the closest geometry point."""
         service = RouteOptimizationService()
         geometry = [
@@ -292,8 +293,11 @@ class RouteOptimizationServiceTest(TestCase):
         idx = service._find_closest_point_idx(geometry, 35.06, -117.26)
         self.assertEqual(idx, 1)
 
+    @patch("fuel_stations.services.route_optimizer.ORSClient")
     @patch("fuel_stations.services.route_optimizer.FuelStation.objects.filter")
-    def test_identify_safety_insight(self, mock_filter: MagicMock) -> None:
+    def test_identify_safety_insight(
+        self, mock_filter: MagicMock, mock_ors_client: MagicMock
+    ) -> None:
         """Test safety insight generation for driver fatigue."""
         service = RouteOptimizationService()
 
