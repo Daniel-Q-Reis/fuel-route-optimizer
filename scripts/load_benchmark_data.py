@@ -86,11 +86,13 @@ def load_benchmark_data() -> None:
             time.sleep(2.0)  # Rate limit: 40 req/min = 1.5s/req. Safe margin: 2.0s
         except Exception as e:
             print(f"Failed to geocode {full_address}: {e}")
-            
+
             # AUTOMATIC BREAK: Stop if API limit (403) or Rate limit (429) hit
             error_str = str(e).lower()
             if "403" in error_str or "forbidden" in error_str or "429" in error_str:
-                print("\n🛑 STOPPING: API Quota exhausted or Rate Limit hit. Please check your ORS Key.")
+                print(
+                    "\n🛑 STOPPING: API Quota exhausted or Rate Limit hit. Please check your ORS Key."
+                )
                 break
 
     print(f"\n✅ Load complete! Added {count} stations. Skipped {skipped} existing.")

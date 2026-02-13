@@ -64,7 +64,7 @@ class RouteOptimizationService:
         if total_distance <= self.max_range:
             avg_price = self._get_average_fuel_price()
             total_cost_val = (total_distance / self.mpg) * float(avg_price)
-            
+
             result = {
                 "route": route,
                 "fuel_stops": [],
@@ -93,7 +93,8 @@ class RouteOptimizationService:
         # Helper to clean station names (remove #1234 suffixes)
         def clean_name(name: str) -> str:
             import re
-            return re.sub(r'\s*#\d+', '', name).strip()
+
+            return re.sub(r"\s*#\d+", "", name).strip()
 
         # Clean up fuel stops names
         for stop in fuel_stops:
@@ -102,9 +103,13 @@ class RouteOptimizationService:
         # Update safety insights names
         for insight in safety_insights:
             if "safety_stop" in insight:
-                insight["safety_stop"]["name"] = clean_name(insight["safety_stop"]["name"])
+                insight["safety_stop"]["name"] = clean_name(
+                    insight["safety_stop"]["name"]
+                )
             if "optimal_stop" in insight:
-                insight["optimal_stop"]["name"] = clean_name(insight["optimal_stop"]["name"])
+                insight["optimal_stop"]["name"] = clean_name(
+                    insight["optimal_stop"]["name"]
+                )
 
         # Final calculations
         total_cost_val = (total_distance / self.mpg) * float(avg_price)
