@@ -10,7 +10,12 @@
 			"name": "Maximize Route (NY -> LA)",
 			"request": {
 				"method": "POST",
-				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
 				"body": {
 					"mode": "raw",
 					"raw": "{\n    \"start_lat\": 40.7128,\n    \"start_lon\": -74.0060,\n    \"end_lat\": 34.0522,\n    \"end_lon\": -118.2437\n}"
@@ -18,9 +23,16 @@
 				"url": {
 					"raw": "http://localhost:8000/api/v1/optimize-route/",
 					"protocol": "http",
-					"host": ["localhost"],
+					"host": [
+						"localhost"
+					],
 					"port": "8000",
-					"path": ["api", "v1", "optimize-route", ""]
+					"path": [
+						"api",
+						"v1",
+						"optimize-route",
+						""
+					]
 				}
 			},
 			"response": []
@@ -29,7 +41,12 @@
 			"name": "Short Trip (NY -> PHL)",
 			"request": {
 				"method": "POST",
-				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
 				"body": {
 					"mode": "raw",
 					"raw": "{\n    \"start_lat\": 40.7128,\n    \"start_lon\": -74.0060,\n    \"end_lat\": 39.9526,\n    \"end_lon\": -75.1652\n}"
@@ -37,10 +54,94 @@
 				"url": {
 					"raw": "http://localhost:8000/api/v1/optimize-route/",
 					"protocol": "http",
-					"host": ["localhost"],
+					"host": [
+						"localhost"
+					],
 					"port": "8000",
-					"path": ["api", "v1", "optimize-route", ""]
-				}
+					"path": [
+						"api",
+						"v1",
+						"optimize-route",
+						""
+					]
+				},
+				"description": "Route from New York to Philadelphia (~100 miles). Should return a direct route with no fuel stops."
+			},
+			"response": []
+		},
+		{
+			"name": "Short Trip (Charlotte -> Atlanta)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"start_lat\": 35.2271,\n    \"start_lon\": -80.8431,\n    \"end_lat\": 33.7490,\n    \"end_lon\": -84.3880\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/optimize-route/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"optimize-route",
+						""
+					]
+				},
+				"description": "Route ~245 miles. Considered 'Short' for a trucker. Demonstrates Sieve logic (skips first 200 checks) -> No Fuel Stops needed -> but triggers Safety Rest Alert."
+			},
+			"response": []
+		},
+		{
+			"name": "Medium Trip (Dallas -> Chicago)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"start_lat\": 32.7767,\n    \"start_lon\": -96.7970,\n    \"end_lat\": 41.8781,\n    \"end_lon\": -87.6298\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/optimize-route/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"optimize-route",
+						""
+					]
+				},
+				"description": "Route ~930 miles. A classic multi-state haul. Requires at least 1-2 fuel stops."
 			},
 			"response": []
 		}
