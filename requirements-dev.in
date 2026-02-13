@@ -20,3 +20,4 @@ factory-boy
 # Security Scanners
 bandit
 safety
+django-silk==5.2.0
